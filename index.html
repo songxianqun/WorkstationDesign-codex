@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>证券员工 AI 工作台原型</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="history-drawer" id="historyDrawer" aria-label="历史会话">
+        <div class="drawer-head">
+          <div>
+            <h2>历史会话</h2>
+          </div>
+          <button class="icon-button" id="closeHistory" aria-label="关闭历史会话">×</button>
+        </div>
+        <div class="history-search">
+          <span>⌕</span>
+          <input type="search" placeholder="搜索客户、项目、任务..." />
+        </div>
+        <div class="history-filters" id="historyFilters">
+          <button class="active" type="button" data-history-filter="all">全部</button>
+          <button type="button" data-history-filter="done">已完成</button>
+          <button type="button" data-history-filter="unfinished">未完成</button>
+        </div>
+        <div id="historyList"></div>
+      </aside>
+
+      <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+      <header class="topbar">
+        <div class="brand">
+          <button class="icon-button" id="openHistory" aria-label="打开历史会话">☰</button>
+          <div>
+            <h1>AI 工作台</h1>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="role-switch" aria-label="切换工作台视角">
+            <button class="active" type="button" data-role="employee">一线业务人员</button>
+            <button type="button" data-role="leader">领导视角</button>
+          </div>
+          <div class="status-pill">
+            <span class="pulse"></span>
+            <strong id="topPreprocessed">AI 已预处理 4 项</strong>
+          </div>
+          <button class="avatar" aria-label="当前用户">宋</button>
+        </div>
+      </header>
+
+      <main class="workspace" id="workspace">
+        <section class="task-board" aria-label="今日任务卡片">
+          <button class="lane-arrow lane-arrow-left" id="lanePrev" aria-label="查看前面的任务">‹</button>
+          <div class="task-lane" id="taskLane" aria-label="横向任务卡片"></div>
+          <button class="lane-arrow lane-arrow-right" id="laneNext" aria-label="查看后面的任务">›</button>
+        </section>
+      </main>
+
+      <section class="composer" aria-label="全局 AI 输入框">
+        <div class="quick-prompts" id="quickPrompts">
+          <div class="business-menu" id="businessMenu" aria-hidden="true"></div>
+          <div class="quick-add-wrap">
+            <button class="quick-add-button" id="quickAddButton" type="button" aria-label="添加能力">＋</button>
+            <div class="quick-add-menu" id="quickAddMenu" aria-hidden="true">
+              <button type="button" data-add-type="ai-tool">配置 AI 工具</button>
+              <button type="button" data-add-type="skill">添加 Skill</button>
+              <button type="button" data-add-type="mcp">添加 MCP</button>
+              <button type="button" data-add-type="prompt">添加常用提示词</button>
+              <button type="button" data-add-type="business">添加业务入口</button>
+              <button type="button" data-add-type="manage-prompts">管理快捷气泡</button>
+            </div>
+          </div>
+        </div>
+        <form class="composer-box" id="composerForm">
+          <button type="button" class="icon-button" aria-label="添加附件">＋</button>
+          <textarea id="composerInput" rows="1" placeholder="输入一个工作目标，AI 会在今日任务最前面生成任务卡片..."></textarea>
+          <button type="submit" class="send-button">发送</button>
+        </form>
+      </section>
+    </div>
+
+    <section class="focus-view" id="focusView" aria-hidden="true">
+      <div class="focus-main">
+        <header class="focus-header">
+          <div>
+            <p class="eyebrow" id="focusMeta">任务详情</p>
+            <h2 id="focusTitle">客户拜访准备</h2>
+          </div>
+          <div class="focus-actions">
+            <span class="task-state state-waiting" id="focusStatus">待你确认</span>
+            <button class="icon-button" id="collapseTask" aria-label="收回任务">⤡</button>
+          </div>
+        </header>
+        <div class="focus-content">
+          <div class="conversation" id="conversation"></div>
+          <form class="task-chat" id="taskChatForm">
+            <textarea id="taskChatInput" rows="1" placeholder="继续对话，输入 @ 可邀请员工加入任务会话..."></textarea>
+            <button type="submit">发送</button>
+          </form>
+        </div>
+      </div>
+      <aside class="artifact-panel" aria-label="任务产物面板">
+        <div class="panel-block">
+          <h3>任务产物</h3>
+          <div id="artifactList"></div>
+        </div>
+        <div class="panel-block">
+          <h3>业务原子模型</h3>
+          <div id="modelList"></div>
+        </div>
+        <div class="panel-block">
+          <h3>参考物与证据链</h3>
+          <div id="referenceList"></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="source-modal" id="sourceModal" aria-hidden="true">
+      <div class="source-card">
+        <header class="source-head">
+          <div>
+            <p class="eyebrow">源文件</p>
+            <h2 id="sourceTitle">项目周报源文件</h2>
+          </div>
+          <button class="icon-button" id="closeSource" aria-label="关闭源文件">×</button>
+        </header>
+        <div class="source-content" id="sourceContent"></div>
+      </div>
+    </section>
+
+    <section class="close-task-modal" id="closeTaskModal" aria-hidden="true">
+      <div class="close-task-card">
+        <h2>关闭任务卡片</h2>
+        <p id="closeTaskText">请选择该任务的完成状态。</p>
+        <div class="close-task-actions">
+          <button type="button" id="markDone">已完成</button>
+          <button type="button" id="markUnfinished">未完成</button>
+          <button type="button" id="cancelCloseTask">取消</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-config-modal" id="toolConfigModal" aria-hidden="true">
+      <div class="tool-config-card">
+        <header class="tool-config-head">
+          <div>
+            <h2>配置 AI 工具卡片</h2>
+            <p>勾选后会加入工作台，扩展时打开原工具页面，会话与原网页保持同步。</p>
+          </div>
+          <button class="icon-button" id="closeToolConfig" aria-label="关闭配置">×</button>
+        </header>
+        <div class="tool-config-list" id="toolConfigList"></div>
+        <footer class="tool-config-foot">
+          <span>可按个人习惯只保留一个，也可以同时加入多个外部 AI 工具。</span>
+          <button type="button" id="applyToolConfig">应用配置</button>
+        </footer>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

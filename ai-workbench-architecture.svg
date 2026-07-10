@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7f9fc"/>
+      <stop offset="1" stop-color="#eef4ff"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101828"/>
+      <stop offset="1" stop-color="#3158ff"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8f0ff"/>
+      <stop offset="1" stop-color="#d9f7ff"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eafaf4"/>
+      <stop offset="1" stop-color="#d9f7e8"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff6e6"/>
+      <stop offset="1" stop-color="#fff0cc"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#18233f" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#3158ff"/>
+    </marker>
+    <marker id="arrowDark" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#344054"/>
+    </marker>
+    <style>
+      text { font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif; fill: #101828; }
+      .small { font-size: 22px; fill: #667085; }
+      .tiny { font-size: 18px; fill: #667085; }
+      .title { font-size: 42px; font-weight: 800; }
+      .section-title { font-size: 28px; font-weight: 800; }
+      .card-title { font-size: 24px; font-weight: 800; }
+      .white { fill: white; }
+      .white-muted { fill: #dbe7ff; font-size: 20px; }
+      .line-blue { stroke: #3158ff; stroke-width: 4; fill: none; marker-end: url(#arrowBlue); }
+      .line-dark { stroke: #344054; stroke-width: 3; fill: none; marker-end: url(#arrowDark); stroke-dasharray: 8 8; }
+      .panel { fill: white; stroke: #d7dee9; stroke-width: 2; filter: url(#shadow); }
+      .soft { fill: #f7f9fc; stroke: #d7dee9; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+
+  <text x="70" y="72" class="title">证券员工 AI 工作台底层架构</text>
+  <text x="72" y="110" class="small">以任务卡片为前台，以公司自动驾驶大模型为编排中枢，调度数据、业务原子模型、AI 数字员工与协同流程</text>
+
+  <rect x="60" y="150" width="1480" height="700" rx="34" fill="#ffffff" opacity="0.78" stroke="#d7dee9" stroke-width="2"/>
+
+  <!-- User layer -->
+  <rect x="115" y="190" width="330" height="120" rx="24" class="panel"/>
+  <circle cx="170" cy="250" r="34" fill="#101828"/>
+  <text x="158" y="259" font-size="30" font-weight="800" class="white">人</text>
+  <text x="220" y="238" class="card-title">证券员工</text>
+  <text x="220" y="272" class="tiny">确认、决策、协同、调整优先级</text>
+
+  <!-- Workbench cards -->
+  <rect x="550" y="165" width="895" height="170" rx="28" fill="url(#blue)" stroke="#b9c9ff" stroke-width="2" filter="url(#shadow)"/>
+  <text x="590" y="214" class="section-title">AI 任务卡片工作空间</text>
+  <text x="592" y="247" class="tiny">今日任务横向牌组 · 卡片内 AI 对话 · 全屏任务态 · 历史会话 · 协同邀请</text>
+
+  <g transform="translate(590 270)">
+    <rect width="150" height="44" rx="14" fill="#ffffff" stroke="#c8d6ff"/>
+    <text x="20" y="29" font-size="18" font-weight="700">客户拜访</text>
+    <rect x="168" width="150" height="44" rx="14" fill="#ffffff" stroke="#c8d6ff"/>
+    <text x="188" y="29" font-size="18" font-weight="700">合规审查</text>
+    <rect x="336" width="150" height="44" rx="14" fill="#ffffff" stroke="#c8d6ff"/>
+    <text x="356" y="29" font-size="18" font-weight="700">投行周报</text>
+    <rect x="504" width="150" height="44" rx="14" fill="#ffffff" stroke="#c8d6ff"/>
+    <text x="524" y="29" font-size="18" font-weight="700">协同邀请</text>
+    <rect x="672" width="126" height="44" rx="14" fill="#101828"/>
+    <text x="697" y="29" font-size="18" font-weight="800" class="white">+ 新任务</text>
+  </g>
+
+  <!-- Core -->
+  <circle cx="800" cy="475" r="126" fill="url(#core)" filter="url(#shadow)"/>
+  <text x="720" y="448" font-size="28" font-weight="900" class="white">公司自动驾驶</text>
+  <text x="735" y="486" font-size="28" font-weight="900" class="white">大模型中枢</text>
+  <text x="700" y="526" class="white-muted">目标理解 · 任务拆解 · 模型调度</text>
+
+  <!-- Orchestration ring -->
+  <circle cx="800" cy="475" r="178" fill="none" stroke="#9db5ff" stroke-width="3" stroke-dasharray="12 12"/>
+  <rect x="612" y="366" width="170" height="54" rx="18" fill="#ffffff" stroke="#b9c9ff"/>
+  <text x="644" y="401" font-size="20" font-weight="800">任务上下文</text>
+  <rect x="825" y="366" width="170" height="54" rx="18" fill="#ffffff" stroke="#b9c9ff"/>
+  <text x="857" y="401" font-size="20" font-weight="800">状态与记忆</text>
+  <rect x="612" y="532" width="170" height="54" rx="18" fill="#ffffff" stroke="#b9c9ff"/>
+  <text x="643" y="567" font-size="20" font-weight="800">证据链留痕</text>
+  <rect x="825" y="532" width="170" height="54" rx="18" fill="#ffffff" stroke="#b9c9ff"/>
+  <text x="855" y="567" font-size="20" font-weight="800">产物生成</text>
+
+  <!-- Atomic models -->
+  <rect x="90" y="395" width="410" height="220" rx="28" fill="url(#green)" stroke="#b7e7d4" stroke-width="2" filter="url(#shadow)"/>
+  <text x="132" y="445" class="section-title">业务原子模型群</text>
+  <text x="132" y="480" class="tiny">被中枢按任务动态调用</text>
+  <g transform="translate(130 510)">
+    <rect width="128" height="42" rx="13" fill="#ffffff" stroke="#b7e7d4"/>
+    <text x="24" y="27" font-size="17" font-weight="700">客户画像</text>
+    <rect x="144" width="128" height="42" rx="13" fill="#ffffff" stroke="#b7e7d4"/>
+    <text x="158" y="27" font-size="17" font-weight="700">产品适当性</text>
+    <rect x="288" width="82" height="42" rx="13" fill="#ffffff" stroke="#b7e7d4"/>
+    <text x="309" y="27" font-size="17" font-weight="700">合规</text>
+    <rect y="58" width="128" height="42" rx="13" fill="#ffffff" stroke="#b7e7d4"/>
+    <text x="24" y="85" font-size="17" font-weight="700">投研分析</text>
+    <rect x="144" y="58" width="128" height="42" rx="13" fill="#ffffff" stroke="#b7e7d4"/>
+    <text x="166" y="85" font-size="17" font-weight="700">项目进度</text>
+    <rect x="288" y="58" width="82" height="42" rx="13" fill="#ffffff" stroke="#b7e7d4"/>
+    <text x="307" y="85" font-size="17" font-weight="700">行情</text>
+  </g>
+
+  <!-- AI digital staff -->
+  <rect x="1100" y="395" width="390" height="220" rx="28" fill="#f5f7ff" stroke="#ccd7ff" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1142" y="445" class="section-title">AI 数字员工</text>
+  <text x="1142" y="480" class="tiny">以角色方式执行可复用工作</text>
+  <g transform="translate(1142 510)">
+    <circle cx="25" cy="22" r="20" fill="#3158ff"/>
+    <text x="17" y="29" font-size="18" font-weight="800" class="white">研</text>
+    <text x="58" y="29" font-size="18" font-weight="700">投研助理</text>
+    <circle cx="25" cy="78" r="20" fill="#0f9f6e"/>
+    <text x="17" y="85" font-size="18" font-weight="800" class="white">合</text>
+    <text x="58" y="85" font-size="18" font-weight="700">合规审查员</text>
+    <circle cx="205" cy="22" r="20" fill="#b87900"/>
+    <text x="197" y="29" font-size="18" font-weight="800" class="white">秘</text>
+    <text x="238" y="29" font-size="18" font-weight="700">项目秘书</text>
+    <circle cx="205" cy="78" r="20" fill="#101828"/>
+    <text x="197" y="85" font-size="18" font-weight="800" class="white">客</text>
+    <text x="238" y="85" font-size="18" font-weight="700">客户助理</text>
+  </g>
+
+  <!-- Data foundation -->
+  <rect x="110" y="685" width="910" height="110" rx="28" fill="#ffffff" stroke="#d7dee9" stroke-width="2" filter="url(#shadow)"/>
+  <text x="152" y="732" class="section-title">企业数据与知识底座</text>
+  <text x="152" y="765" class="tiny">客户 · 产品 · 交易 · 项目 · 行情 · 制度 · 邮件 · 会议 · 文档 · 历史会话</text>
+
+  <!-- Governance -->
+  <rect x="1070" y="685" width="390" height="110" rx="28" fill="url(#amber)" stroke="#f3d08c" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1112" y="732" class="section-title">可信合规护栏</text>
+  <text x="1112" y="765" class="tiny">权限 · 脱敏 · 人工确认 · 日志 · 审计</text>
+
+  <!-- Flow lines -->
+  <path d="M445 250 C500 250, 500 250, 550 250" class="line-blue"/>
+  <path d="M800 335 L800 350" class="line-blue"/>
+  <path d="M675 475 C590 470, 560 470, 500 480" class="line-blue"/>
+  <path d="M925 475 C1010 470, 1040 470, 1100 480" class="line-blue"/>
+  <path d="M565 685 C610 630, 660 590, 700 550" class="line-blue"/>
+  <path d="M1265 685 C1190 620, 1085 555, 948 514" class="line-dark"/>
+  <path d="M800 601 C800 635, 760 660, 700 685" class="line-blue"/>
+  <path d="M910 335 C1040 360, 1110 390, 1170 430" class="line-dark"/>
+
+  <!-- Legend -->
+  <rect x="1165" y="165" width="280" height="84" rx="22" fill="#ffffff" stroke="#d7dee9"/>
+  <circle cx="1200" cy="207" r="9" fill="#3158ff"/>
+  <text x="1220" y="214" class="tiny">任务驱动的数据与模型调度</text>
+  <circle cx="1200" cy="235" r="9" fill="#344054"/>
+  <text x="1220" y="242" class="tiny">合规与审计约束贯穿全链路</text>
+</svg>
