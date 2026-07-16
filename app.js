@@ -1285,7 +1285,11 @@ function applyToolConfig() {
 }
 
 function clearUnreadDone(id, shouldRender = true) {
-  const task = tasks.find((item) => item.id === id);
+  const card = document.getElementById(`card-${id}`);
+  card?.classList.remove("highlight");
+  let task = tasks.find((item) => item.id === id);
+  if (!task) task = employeeTasks.find((item) => item.id === id);
+  if (!task) task = leaderTasks.find((item) => item.id === id);
   if (!task?.unreadDone) return;
   task.unreadDone = false;
   if (shouldRender) updateSingleTaskCard(task);
@@ -1495,6 +1499,10 @@ function renderConversation(task) {
 }
 
 function buildAiReply(task, text) {
+  if (task.id === "incoming-risk-review" && text.includes("接受")) {
+    return `你已接受协作。张晓已完成初筛，以下是需要你重点关注的风险内容：\n\n风险点 1：收益暗示表述（第 4 页）\n材料中“稳健增值”容易被客户理解为收益承诺，违反《营销材料规范》第 12 条。张晓已建议改为“风险收益特征相对稳健”，等你确认是否采用。\n\n风险点 2：适当性不匹配（第 7 页）\n客户风险等级为 C3，材料中拟推荐 1 只 R4 产品，未补充适当性确认。张晓希望你重点判断第 2 条适当性说明是否充分，以及 R4 产品是否保留或替换为 R3。\n\n免责声明位置偏后的问题已标出，张晓同意前移到风险说明页。请你查看后给出处理意见。`;
+  }
+
   const commonHeader = `收到你的补充指令：${text}
 
 正在执行任务 Agent 流程：
