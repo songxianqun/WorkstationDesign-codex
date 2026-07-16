@@ -119,17 +119,17 @@
   <text x="1142" y="480" class="tiny">以角色方式执行可复用工作</text>
   <g transform="translate(1142 510)">
     <circle cx="25" cy="22" r="20" fill="#3158ff"/>
-    <text x="17" y="29" font-size="18" font-weight="800" class="white">研</text>
-    <text x="58" y="29" font-size="18" font-weight="700">投研助理</text>
+    <text x="17" y="29" font-size="18" font-weight="800" class="white">资</text>
+    <text x="58" y="29" font-size="18" font-weight="700">资管业务助理</text>
     <circle cx="25" cy="78" r="20" fill="#0f9f6e"/>
-    <text x="17" y="85" font-size="18" font-weight="800" class="white">合</text>
-    <text x="58" y="85" font-size="18" font-weight="700">合规审查员</text>
+    <text x="17" y="85" font-size="18" font-weight="800" class="white">零</text>
+    <text x="58" y="85" font-size="18" font-weight="700">零售业务助理</text>
     <circle cx="205" cy="22" r="20" fill="#b87900"/>
-    <text x="197" y="29" font-size="18" font-weight="800" class="white">秘</text>
-    <text x="238" y="29" font-size="18" font-weight="700">项目秘书</text>
+    <text x="197" y="29" font-size="18" font-weight="800" class="white">投</text>
+    <text x="238" y="29" font-size="18" font-weight="700">投行业务助理</text>
     <circle cx="205" cy="78" r="20" fill="#101828"/>
-    <text x="197" y="85" font-size="18" font-weight="800" class="white">客</text>
-    <text x="238" y="85" font-size="18" font-weight="700">客户助理</text>
+    <text x="197" y="85" font-size="18" font-weight="800" class="white">销</text>
+    <text x="238" y="85" font-size="18" font-weight="700">销售交易助理</text>
   </g>
 
   <!-- Data foundation -->

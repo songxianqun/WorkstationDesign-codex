@@ -47,6 +47,21 @@ const employeeTasks = [
     state: "risk",
     progress: 72,
     tags: ["适当性", "敏感表述", "证据链"],
+    displayMode: "compliance",
+    riskPoints: [
+      {
+        title: "收益暗示表述",
+        location: "第 4 页",
+        detail: "“稳健增值”容易被客户理解为收益承诺，违反《营销材料规范》第 12 条。建议改为“风险收益特征相对稳健”。"
+      },
+      {
+        title: "适当性不匹配",
+        location: "第 7 页",
+        detail: "客户风险等级为 C3，材料中拟推荐 1 只 R4 产品，未补充适当性确认。建议人工复核确认是否保留或替换为 R3 产品。"
+      }
+    ],
+    aiOpinion: "建议优先一键修订收益表述，再提交人工复核确认 R4 产品是否保留。免责声明位置已标出，修订后可生成可外发版本并保留修订留痕。",
+    actionPrompts: ["一键修订", "提交人工复核", "邀请合规确认", "生成可外发版本"],
     taskContent: "产品中心提交了一份客户推荐材料，需要在发送客户前完成适当性、收益表述和免责声明检查。",
     summary: [
       "检测到 1 处收益表述偏强，建议替换为中性描述。",
@@ -71,57 +86,6 @@ const employeeTasks = [
     conversation: [
       ["system", "AI 在产品推荐材料中发现 2 个风险点，建议先处理后再提交审批。"],
       ["ai", "第 4 页“稳健增值”容易被理解为暗示收益，建议改为“风险收益特征相对稳健”。"]
-    ]
-  },
-  {
-    id: "ib-weekly",
-    title: "投行项目周报",
-    business: "投资银行",
-    owner: "项目组",
-    status: "AI 已生成初稿",
-    state: "done",
-    progress: 94,
-    tags: ["项目进度", "底稿", "监管反馈"],
-    taskContent: "本周投行项目例会前，需要形成项目周报，覆盖进度、卡点、下周计划和需要负责人协调的事项。",
-    weeklyHighlights: [
-      "项目整体进度正常，底稿完成度约 88%，核心申报材料已进入负责人复核。",
-      "本周新增监管反馈 3 条，其中 2 条已完成回复草稿，1 条需审计机构补充说明。",
-      "下周重点是客户盖章、审计补充说明和内核会议材料定稿。"
-    ],
-    summary: [
-      "已拉取项目计划、客户邮件、底稿清单和监管反馈。",
-      "自动生成本周进展、下周计划和待协调事项。",
-      "识别出 1 个卡点：审计机构仍未提交补充说明。"
-    ],
-    nextSteps: ["确认周报初稿是否可发送。", "补充审计机构卡点说明。", "决定是否发给项目负责人。"],
-    actions: ["确认周报", "补充说明", "发给负责人", "归档"],
-    artifacts: [
-      ["项目周报", "Doc · 1,860 字"],
-      ["卡点清单", "Table · 4 项"]
-    ],
-    sourceFile: {
-      title: "XX 股份 IPO 项目周报源文件",
-      meta: "源文件 · 投行项目管理系统 · 同步于 12:10",
-      sections: [
-        ["一、本周进展", "完成申报材料第 3 轮修订；客户已确认财务数据口径；律师补充核查记录已归档。"],
-        ["二、监管反馈", "本周收到 3 条反馈意见，其中 2 条已形成回复草稿，剩余 1 条涉及审计机构补充说明。"],
-        ["三、当前卡点", "审计机构尚未提交收入确认补充说明，可能影响内核会议材料最终定稿。"],
-        ["四、下周计划", "完成客户盖章、审计补充说明、内核会议材料定稿，并同步更新底稿目录。"]
-      ]
-    },
-    models: [
-      ["项目进度原子模型", "已完成"],
-      ["底稿完整性模型", "已完成"],
-      ["监管反馈归纳模型", "已完成"]
-    ],
-    references: [
-      ["项目管理系统", "同步于 12:10"],
-      ["邮件往来", "引用 9 封"],
-      ["底稿目录", "完成度 88%"]
-    ],
-    conversation: [
-      ["system", "AI 已生成投行项目周报初稿，等待项目负责人确认。"],
-      ["ai", "本周核心卡点集中在审计补充说明和客户盖章安排，建议在周会中优先协调。"]
     ]
   },
   {
@@ -628,6 +592,7 @@ function renderTaskCard(task) {
         <div class="task-actions">
           <form class="card-chat" data-card-chat="${task.id}">
             <textarea rows="1" placeholder="在当前任务中继续输入..."></textarea>
+            <button type="button" class="voice-btn voice-btn-sm" data-voice-card aria-label="语音输入"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
             <button type="submit" aria-label="发送">↑</button>
           </form>
         </div>
@@ -1048,6 +1013,10 @@ function renderTaskBody(task) {
     return renderMeetingScheduleBody(task);
   }
 
+  if (task.displayMode === "compliance") {
+    return renderComplianceBody(task);
+  }
+
   return `
     ${
       task.invitation
@@ -1119,6 +1088,39 @@ function renderMeetingScheduleBody(task) {
     </div>`;
 }
 
+function renderComplianceBody(task) {
+  const risks = (task.riskPoints || []).map(
+    (rp, i) => `
+      <div class="risk-item">
+        <span class="risk-index">${i + 1}</span>
+        <div class="risk-content">
+          <div class="risk-title-row">
+            <span class="risk-title">${rp.title}</span>
+            <span class="risk-loc">${rp.location}</span>
+          </div>
+          <p class="risk-detail">${rp.detail}</p>
+        </div>
+      </div>`
+  ).join("");
+
+  const prompts = (task.actionPrompts || []).map(
+    (p) => `<button class="action-prompt" data-action="${p}" data-task="${task.id}">${p}</button>`
+  ).join("");
+
+  return `
+    <div class="compliance-view">
+      <div class="risk-list">${risks}</div>
+      <div class="ai-opinion">
+        <span class="opinion-label">AI 处理意见</span>
+        <p>${task.aiOpinion || ""}</p>
+      </div>
+      <div class="action-prompts">${prompts}</div>
+    </div>
+    <div class="mini-thread" id="mini-thread-${task.id}">
+      ${renderMiniThread(task)}
+    </div>`;
+}
+
 function renderMiniThread(task, limit = null) {
   const messages = task.conversation.filter(
     ([type]) => type === "user" || type === "ai" || type === "system" || type.startsWith("person:")
@@ -1129,7 +1131,8 @@ function renderMiniThread(task, limit = null) {
     .map(([type, text, meta]) => {
       const { className, label } = getMessageMeta(type);
       const streaming = meta?.streaming ? " streaming" : "";
-      return `<div class="mini-message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}<span>${text}</span></div>`;
+      const displayText = meta?.html ? (meta.plainText || "") : text;
+      return `<div class="mini-message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}<span>${displayText}</span></div>`;
     })
     .join("");
 }
@@ -1482,6 +1485,9 @@ function renderConversation(task) {
     .map(([type, text, meta]) => {
       const { className, label } = getMessageMeta(type);
       const streaming = meta?.streaming ? " streaming" : "";
+      if (meta?.html) {
+        return `<div class="message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}${text}</div>`;
+      }
       return `<div class="message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}<span>${text}</span></div>`;
     })
     .join("");
@@ -1681,6 +1687,7 @@ AI 建议：
 }
 
 function detectNewTaskIntent(prompt) {
+  if (prompt.includes("持仓") && (prompt.includes("客户") || prompt.includes("分析") || prompt.includes("情况"))) return "customerHolding";
   if (prompt.includes("ABS")) return "absOpportunity";
   if ((prompt.includes("两融") || prompt.includes("融资融券")) && (prompt.includes("分析") || prompt.includes("趋势") || prompt.includes("变化") || prompt.includes("余额"))) return "marginAnalysis";
   if (prompt.includes("信托") || prompt.includes("理财配置")) return "trustWealth";
@@ -1792,11 +1799,259 @@ function buildTopicPreset(prompt, intent) {
       focus: "费用控制",
       points: ["汇总本月费用执行、预算占用和异常支出线索。", "识别差旅、营销、项目费用和外部服务费用中的偏离项。", "生成费用控制建议和需审批事项。"],
       next: ["查看异常费用明细。", "生成费用控制建议。", "形成需要审批或问询的事项。"]
+    },
+    customerHolding: {
+      title: "客户持仓情况分析",
+      business: "财富管理",
+      focus: "客户持仓全景",
+      points: ["已拉取名下全部客户账户数据，覆盖证券账户、信用账户和场外理财账户。", "已拆解各账户类型持仓结构、资产分布和产品类型构成。", "已生成持仓区间分布、最大持仓客户和资产集中度分析。"],
+      next: ["按账户类型或持仓区间筛选客户。", "生成高净值客户资产配置建议。", "识别持仓到期和需要调整的客户清单。"]
     }
   };
 
   const topic = topics[intent];
   if (!topic) return null;
+
+  if (intent === "customerHolding") {
+    const plainText = `正在分析你的客户持仓情况：${prompt}\n\n数据口径：截至 2026-07-12 日终，来源为集中交易系统、信用账户系统和 OTC 理财系统。\n\n一、账户总览\n  普通证券账户：开户 3,847 户，有持仓 2,916 户，持仓 487,326.50 万元\n  信用账户（两融）：开户 286 户，有持仓 241 户，持仓 156,820.30 万元\n  场外理财账户：开户 1,572 户，有持仓 1,103 户，持仓 213,448.70 万元\n  合计开户 5,705 户，合计 AUM 857,595.50 万元（约 85.76 亿元）\n\n二、普通证券账户持仓结构（总持仓 48.73 亿元）\n  股票：312,508.40 万元（64.1%），2,683 户\n  场内基金（ETF/LOF）：98,763.20 万元（20.3%），1,476 户\n  债券：41,205.80 万元（8.5%），312 户\n  现金/逆回购：22,149.10 万元（4.5%），2,916 户\n  空仓（仅现金）：12,700.00 万元（2.6%），769 户\n  空仓客户 769 户（占 26.4%），闲置资金约 1.27 亿元\n\n三、信用账户（两融）情况\n  融资余额：89,432.60 万元\n  融券余额（券市值）：12,387.70 万元\n  两融余额合计：101,820.30 万元\n  信用账户自有资产：55,000.00 万元，总资产 156,820.30 万元\n  有持仓客户 241/286 户（渗透率 84.3%），平均维持担保比 268.4%\n  预警客户（维持担保比 < 150%）：7 户\n\n四、场外理财账户持仓结构（总持仓 21.34 亿元）\n  公募产品：112,876.40 万元（52.9%），876 户\n  私募产品：74,230.10 万元（34.8%），198 户\n  信托产品：26,342.20 万元（12.3%），89 户\n  开户 1,572 户，有持仓 1,103 户（渗透率 70.2%），未配置 469 户\n\n五、客户持仓区间分布（全口径）\n  1000 万以上：87 户（2.3%），286,420.50 万元（33.4%）\n  500~1000 万：156 户（4.1%），108,736.20 万元（12.7%）\n  100~500 万：642 户（16.8%），163,827.40 万元（19.1%）\n  50~100 万：718 户（18.8%），52,103.60 万元（6.1%）\n  10~50 万：1,537 户（40.3%），38,427.80 万元（4.5%）\n  10 万以下：680 户（17.8%），8,080.00 万元（0.9%）\n  空仓：769 户\n\n六、最大持仓客户\n  张明华（****8862），持仓总额 4,827.60 万元\n  普通证券 2,136.40 万 + 信用 1,892.20 万 + 场外理财 799.00 万\n  风险等级激进型，维持担保比 245%，7/11 加仓半导体 ETF 200 万\n\n七、关键发现与建议\n  1. 高净值集中度高：87 户贡献 33.4% AUM，建议重点维护\n  2. 空仓 769 户，闲置 1.27 亿，适合推荐现金管理产品\n  3. 场外理财渗透率 70.2%，469 户未配置，建议批量跟进\n  4. 私募客单价 374.9 万，是高净值经营重要抓手\n  5. 信用预警 7 户（维持担保比 < 150%），需跟进补仓\n\n我已生成客户持仓全景表、持仓区间分布图和高净值客户清单。你可以继续让我按客户分层、产品类型或账户维度展开。`;
+
+    const html = `<div class="holding-report">
+  <div class="report-meta">数据口径：截至 2026-07-12 日终 · 来源：集中交易系统、信用账户系统、OTC 理财系统</div>
+
+  <h4 class="report-h">一、账户总览</h4>
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-label">普通证券账户</div>
+      <div class="kpi-value">3,847<span class="kpi-unit">户</span></div>
+      <div class="kpi-sub">有持仓 2,916 户</div>
+      <div class="kpi-amount">48.73 亿元</div>
+    </div>
+    <div class="kpi-card kpi-orange">
+      <div class="kpi-label">信用账户（两融）</div>
+      <div class="kpi-value">286<span class="kpi-unit">户</span></div>
+      <div class="kpi-sub">有持仓 241 户</div>
+      <div class="kpi-amount">15.68 亿元</div>
+    </div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-label">场外理财账户</div>
+      <div class="kpi-value">1,572<span class="kpi-unit">户</span></div>
+      <div class="kpi-sub">有持仓 1,103 户</div>
+      <div class="kpi-amount">21.34 亿元</div>
+    </div>
+    <div class="kpi-card kpi-total">
+      <div class="kpi-label">合计 AUM</div>
+      <div class="kpi-value">85.76<span class="kpi-unit">亿元</span></div>
+      <div class="kpi-sub">开户合计 5,705 户</div>
+    </div>
+  </div>
+
+  <h4 class="report-h">二、普通证券账户持仓结构</h4>
+  <div class="report-highlight">总持仓金额 <strong>487,326.50 万元</strong>（约 48.73 亿元）</div>
+  <div class="bar-chart">
+    <div class="bar-row">
+      <span class="bar-label">股票</span>
+      <div class="bar-track"><div class="bar-fill" style="width:64.1%;background:#356dff"></div></div>
+      <span class="bar-amount">31.25 亿</span>
+      <span class="bar-pct">64.1%</span>
+      <span class="bar-count">2,683 户</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">场内基金</span>
+      <div class="bar-track"><div class="bar-fill" style="width:20.3%;background:#52c41a"></div></div>
+      <span class="bar-amount">9.88 亿</span>
+      <span class="bar-pct">20.3%</span>
+      <span class="bar-count">1,476 户</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">债券</span>
+      <div class="bar-track"><div class="bar-fill" style="width:8.5%;background:#faad14"></div></div>
+      <span class="bar-amount">4.12 亿</span>
+      <span class="bar-pct">8.5%</span>
+      <span class="bar-count">312 户</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">现金/逆回购</span>
+      <div class="bar-track"><div class="bar-fill" style="width:4.5%;background:#d9d9d9"></div></div>
+      <span class="bar-amount">2.21 亿</span>
+      <span class="bar-pct">4.5%</span>
+      <span class="bar-count">2,916 户</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">空仓</span>
+      <div class="bar-track"><div class="bar-fill" style="width:2.6%;background:#ff7875"></div></div>
+      <span class="bar-amount">1.27 亿</span>
+      <span class="bar-pct">2.6%</span>
+      <span class="bar-count">769 户</span>
+    </div>
+  </div>
+  <div class="report-note"><span class="note-tag warn">关注</span>空仓客户 769 户（占 26.4%），闲置资金约 1.27 亿元，适合推荐现金管理类产品</div>
+
+  <h4 class="report-h">三、信用账户（两融）情况</h4>
+  <div class="kpi-grid kpi-grid-sm">
+    <div class="kpi-card kpi-mini kpi-orange">
+      <div class="kpi-label">融资余额</div>
+      <div class="kpi-value-sm">8.94 亿元</div>
+    </div>
+    <div class="kpi-card kpi-mini kpi-orange">
+      <div class="kpi-label">融券余额</div>
+      <div class="kpi-value-sm">1.24 亿元</div>
+    </div>
+    <div class="kpi-card kpi-mini kpi-orange">
+      <div class="kpi-label">两融合计</div>
+      <div class="kpi-value-sm">10.18 亿元</div>
+    </div>
+    <div class="kpi-card kpi-mini kpi-orange">
+      <div class="kpi-label">总资产</div>
+      <div class="kpi-value-sm">15.68 亿元</div>
+    </div>
+  </div>
+  <div class="info-row"><span>有持仓客户</span><strong>241 / 286 户（84.3%）</strong></div>
+  <div class="info-row"><span>平均维持担保比</span><strong>268.4%</strong><span class="muted">（市场均值 253%）</span></div>
+  <div class="info-row alert"><span>预警客户（< 150%）</span><strong>7 户</strong><span class="muted">需关注补仓风险</span></div>
+
+  <h4 class="report-h">四、场外理财账户持仓结构</h4>
+  <div class="report-highlight">总持仓金额 <strong>213,448.70 万元</strong>（约 21.34 亿元）</div>
+  <div class="bar-chart">
+    <div class="bar-row">
+      <span class="bar-label">公募产品</span>
+      <div class="bar-track"><div class="bar-fill" style="width:52.9%;background:#722ed1"></div></div>
+      <span class="bar-amount">11.29 亿</span>
+      <span class="bar-pct">52.9%</span>
+      <span class="bar-count">876 户</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">私募产品</span>
+      <div class="bar-track"><div class="bar-fill" style="width:34.8%;background:#13c2c2"></div></div>
+      <span class="bar-amount">7.42 亿</span>
+      <span class="bar-pct">34.8%</span>
+      <span class="bar-count">198 户</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">信托产品</span>
+      <div class="bar-track"><div class="bar-fill" style="width:12.3%;background:#eb2f96"></div></div>
+      <span class="bar-amount">2.63 亿</span>
+      <span class="bar-pct">12.3%</span>
+      <span class="bar-count">89 户</span>
+    </div>
+  </div>
+  <div class="report-note"><span class="note-tag info">跟进</span>开户 1,572 户，有持仓 1,103 户（渗透率 70.2%），未配置 469 户可重点跟进</div>
+
+  <h4 class="report-h">五、客户持仓区间分布</h4>
+  <div class="dist-table">
+    <div class="dist-header">
+      <span>持仓区间</span><span>客户数</span><span>占比</span><span>金额（万）</span><span>金额占比</span>
+    </div>
+    <div class="dist-row dist-top">
+      <span class="dist-label">1000 万以上</span>
+      <span class="dist-count">87</span>
+      <span class="dist-pct">2.3%</span>
+      <span class="dist-amount">286,420.50</span>
+      <span class="dist-bar-wrap"><span class="dist-bar-fill" style="width:33.4%"></span><span class="dist-pct-val">33.4%</span></span>
+    </div>
+    <div class="dist-row">
+      <span class="dist-label">500~1000 万</span>
+      <span class="dist-count">156</span>
+      <span class="dist-pct">4.1%</span>
+      <span class="dist-amount">108,736.20</span>
+      <span class="dist-bar-wrap"><span class="dist-bar-fill" style="width:12.7%"></span><span class="dist-pct-val">12.7%</span></span>
+    </div>
+    <div class="dist-row">
+      <span class="dist-label">100~500 万</span>
+      <span class="dist-count">642</span>
+      <span class="dist-pct">16.8%</span>
+      <span class="dist-amount">163,827.40</span>
+      <span class="dist-bar-wrap"><span class="dist-bar-fill" style="width:19.1%"></span><span class="dist-pct-val">19.1%</span></span>
+    </div>
+    <div class="dist-row">
+      <span class="dist-label">50~100 万</span>
+      <span class="dist-count">718</span>
+      <span class="dist-pct">18.8%</span>
+      <span class="dist-amount">52,103.60</span>
+      <span class="dist-bar-wrap"><span class="dist-bar-fill" style="width:6.1%"></span><span class="dist-pct-val">6.1%</span></span>
+    </div>
+    <div class="dist-row">
+      <span class="dist-label">10~50 万</span>
+      <span class="dist-count">1,537</span>
+      <span class="dist-pct">40.3%</span>
+      <span class="dist-amount">38,427.80</span>
+      <span class="dist-bar-wrap"><span class="dist-bar-fill" style="width:4.5%"></span><span class="dist-pct-val">4.5%</span></span>
+    </div>
+    <div class="dist-row">
+      <span class="dist-label">10 万以下</span>
+      <span class="dist-count">680</span>
+      <span class="dist-pct">17.8%</span>
+      <span class="dist-amount">8,080.00</span>
+      <span class="dist-bar-wrap"><span class="dist-bar-fill" style="width:0.9%"></span><span class="dist-pct-val">0.9%</span></span>
+    </div>
+    <div class="dist-row dist-empty">
+      <span class="dist-label">空仓</span>
+      <span class="dist-count">769</span>
+      <span class="dist-pct">—</span>
+      <span class="dist-amount">—</span>
+      <span class="dist-bar-wrap"><span class="muted">—</span></span>
+    </div>
+  </div>
+
+  <h4 class="report-h">六、最大持仓客户</h4>
+  <div class="top-customer-card">
+    <div class="tc-header">
+      <span class="tc-rank">No.1</span>
+      <span class="tc-name">张明华</span>
+      <span class="tc-account">****8862</span>
+      <span class="tc-total">4,827.60 万元</span>
+    </div>
+    <div class="tc-breakdown">
+      <div class="tc-item"><span class="tc-tag blue">普通证券</span><span>2,136.40 万</span><span class="muted">股票 1,580 万 + 基金 556.40 万</span></div>
+      <div class="tc-item"><span class="tc-tag orange">信用账户</span><span>1,892.20 万</span><span class="muted">自有 1,120 万 + 融资 772.20 万</span></div>
+      <div class="tc-item"><span class="tc-tag green">场外理财</span><span>799.00 万</span><span class="muted">公募 320 万 + 私募 479 万</span></div>
+    </div>
+    <div class="tc-footer">
+      <span>风险等级：<strong>激进型</strong></span>
+      <span>维持担保比：<strong>245%</strong></span>
+      <span>最近交易：7/11 加仓半导体 ETF 200 万</span>
+    </div>
+  </div>
+
+  <h4 class="report-h">七、关键发现与建议</h4>
+  <div class="insight-list">
+    <div class="insight-item insight-warn">
+      <span class="insight-num">1</span>
+      <div><strong>高净值集中度高</strong>：1000 万以上客户 87 户仅占 2.3%，但贡献 33.4% AUM，建议重点维护并安排定期资产检视。</div>
+    </div>
+    <div class="insight-item insight-info">
+      <span class="insight-num">2</span>
+      <div><strong>空仓客户</strong>：769 户（26.4%），闲置资金约 1.27 亿元，适合推荐现金管理类或低风险固收产品。</div>
+    </div>
+    <div class="insight-item insight-info">
+      <span class="insight-num">3</span>
+      <div><strong>理财渗透率不足</strong>：场外理财渗透率 70.2%，469 户已开户未配置，建议批量跟进产品配置。</div>
+    </div>
+    <div class="insight-item insight-info">
+      <span class="insight-num">4</span>
+      <div><strong>私募经营抓手</strong>：私募持仓客户 198 户，客单价 374.9 万元，是高净值客户经营的重要切入点。</div>
+    </div>
+    <div class="insight-item insight-alert">
+      <span class="insight-num">5</span>
+      <div><strong>信用预警</strong>：7 户维持担保比 < 150%，需及时跟进补仓或减仓沟通。</div>
+    </div>
+  </div>
+
+  <div class="report-footer">我已生成客户持仓全景表、持仓区间分布图和高净值客户清单。你可以继续让我按客户分层、产品类型或账户维度展开，也可以直接生成可转发给客户的持仓诊断报告。</div>
+</div>`;
+
+    return {
+      title: topic.title,
+      business: topic.business,
+      summary: topic.points,
+      nextSteps: topic.next,
+      actions: ["生成配置建议", "筛选客户", "导出报表", "发送客户"],
+      artifacts: [["客户持仓全景表", "Table · 3,847 户"], ["持仓区间分布图", "Chart · 6 档"], ["高净值客户清单", "List · 87 户"]],
+      models: [["客户账户聚合模型", "已完成"], ["持仓归因分析模型", "已完成"], ["资产集中度评估模型", "已完成"]],
+      references: [["集中交易系统", "T-1 日终数据"], ["OTC 理财系统", "截至昨日"], ["信用账户系统", "实时同步"]],
+      output: plainText,
+      outputHtml: html
+    };
+  }
 
   if (intent === "marginAnalysis") {
     return {
@@ -2393,7 +2648,13 @@ function streamAiReply(task, aiMessage, fullText, options = {}) {
 
       if (index >= fullText.length) {
         window.clearInterval(timer);
-        aiMessage[2] = { streaming: false };
+        if (options.finalHtml) {
+          aiMessage[1] = options.finalHtml;
+          aiMessage[2] = { streaming: false, html: true, plainText: options.plainText || fullText };
+          refreshTaskViews(task);
+        } else {
+          aiMessage[2] = { streaming: false };
+        }
         options.onDone?.();
       }
     }, 34);
@@ -2473,6 +2734,8 @@ function createTaskFromPrompt(prompt) {
 
   streamAiReply(newTask, aiMessage, preset.output, {
     delay: 240,
+    finalHtml: preset.outputHtml || null,
+    plainText: preset.output || null,
     onDone: () => {
       newTask.status = "待你确认";
       newTask.state = "waiting";
@@ -2563,6 +2826,13 @@ function addIncomingInvitation() {
     showToast("你收到一条新的协同邀请，已生成任务卡片");
   }
 }
+
+composerInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    composerForm.requestSubmit();
+  }
+});
 
 composerForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -3100,4 +3370,76 @@ renderHistory();
     backToList();
     origCloseTask();
   };
+})();
+
+/* ── Voice input via Web Speech API ── */
+(function initVoiceInput() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+
+  let activeRecognition = null;
+  let activeButton = null;
+
+  function toggleVoice(btn, textarea) {
+    if (activeRecognition) {
+      activeRecognition.stop();
+      return;
+    }
+
+    const rec = new SR();
+    rec.lang = "zh-CN";
+    rec.continuous = true;
+    rec.interimResults = true;
+
+    let baseText = textarea.value;
+    if (baseText && !baseText.endsWith(" ")) baseText += "";
+
+    rec.onresult = (e) => {
+      let interim = "";
+      let final = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const tr = e.results[i];
+        if (tr.isFinal) final += tr[0].transcript;
+        else interim += tr[0].transcript;
+      }
+      if (final) {
+        baseText += final;
+        textarea.value = baseText;
+      } else {
+        textarea.value = baseText + interim;
+      }
+      textarea.scrollTop = textarea.scrollHeight;
+    };
+
+    rec.onerror = (e) => {
+      if (e.error === "no-speech") return;
+      showToast("语音识别出错：" + e.error);
+    };
+
+    rec.onend = () => {
+      btn.classList.remove("recording");
+      activeRecognition = null;
+      activeButton = null;
+      textarea.focus();
+    };
+
+    rec.start();
+    btn.classList.add("recording");
+    activeRecognition = rec;
+    activeButton = btn;
+  }
+
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-voice-target], [data-voice-card]");
+    if (!btn) return;
+    e.preventDefault();
+    let textarea;
+    if (btn.dataset.voiceTarget) {
+      textarea = document.getElementById(btn.dataset.voiceTarget);
+    } else {
+      textarea = btn.closest("form").querySelector("textarea");
+    }
+    if (!textarea) return;
+    toggleVoice(btn, textarea);
+  });
 })();
