@@ -1167,6 +1167,17 @@ button {
   font-weight: 800;
 }
 
+.card-chat .voice-btn {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.card-chat .voice-btn:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
 .ai-tool-body {
   display: flex;
   flex-direction: column;
