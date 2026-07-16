@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>证券员工 AI 工作台原型</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260715-5" />
   </head>
   <body>
     <div class="app-shell">
@@ -37,15 +37,31 @@
           </div>
         </div>
         <div class="top-actions">
-          <div class="role-switch" aria-label="切换工作台视角">
-            <button class="active" type="button" data-role="employee">一线业务人员</button>
-            <button type="button" data-role="leader">领导视角</button>
+          <button class="autopilot-refresh" id="refreshAutopilotTasks" type="button">
+            <svg class="refresh-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/></svg>
+            <span>自动驾驶分派任务</span>
+          </button>
+          <div class="user-menu" id="userMenu">
+            <button class="user-trigger" id="userTrigger" type="button" aria-label="当前用户">
+              <span class="user-avatar">宋</span>
+              <span class="user-info">
+                <strong>宋贤群</strong>
+                <small id="userRoleLabel">一线业务人员</small>
+              </span>
+              <svg class="chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="user-dropdown" id="userDropdown" aria-hidden="true">
+              <p class="dropdown-label">切换视角</p>
+              <button class="dropdown-item active" type="button" data-role="employee">
+                <span class="dropdown-dot"></span>
+                <span>一线业务人员</span>
+              </button>
+              <button class="dropdown-item" type="button" data-role="leader">
+                <span class="dropdown-dot"></span>
+                <span>领导视角</span>
+              </button>
+            </div>
           </div>
-          <div class="status-pill">
-            <span class="pulse"></span>
-            <strong id="topPreprocessed">AI 已预处理 4 项</strong>
-          </div>
-          <button class="avatar" aria-label="当前用户">宋</button>
         </div>
       </header>
 
@@ -59,15 +75,14 @@
 
       <section class="composer" aria-label="全局 AI 输入框">
         <div class="quick-prompts" id="quickPrompts">
-          <div class="business-menu" id="businessMenu" aria-hidden="true"></div>
+          <div class="shortcut-menu" id="shortcutMenu" aria-hidden="true"></div>
           <div class="quick-add-wrap">
-            <button class="quick-add-button" id="quickAddButton" type="button" aria-label="添加能力">＋</button>
+            <button class="quick-add-button" id="quickAddButton" type="button" aria-label="添加能力">+</button>
             <div class="quick-add-menu" id="quickAddMenu" aria-hidden="true">
               <button type="button" data-add-type="ai-tool">配置 AI 工具</button>
               <button type="button" data-add-type="skill">添加 Skill</button>
               <button type="button" data-add-type="mcp">添加 MCP</button>
               <button type="button" data-add-type="prompt">添加常用提示词</button>
-              <button type="button" data-add-type="business">添加业务入口</button>
               <button type="button" data-add-type="manage-prompts">管理快捷气泡</button>
             </div>
           </div>
@@ -100,18 +115,28 @@
           </form>
         </div>
       </div>
-      <aside class="artifact-panel" aria-label="任务产物面板">
-        <div class="panel-block">
-          <h3>任务产物</h3>
-          <div id="artifactList"></div>
+      <div class="resize-handle" id="resizeHandle" aria-label="拖拽调整面板宽度"></div>
+      <aside class="artifact-panel" id="artifactPanel" aria-label="任务产物面板">
+        <div class="artifact-list-view" id="artifactListView">
+          <div class="panel-block">
+            <h3>任务产物</h3>
+            <div id="artifactList"></div>
+          </div>
+          <div class="panel-block">
+            <h3>业务原子模型</h3>
+            <div id="modelList"></div>
+          </div>
+          <div class="panel-block">
+            <h3>参考物与证据链</h3>
+            <div id="referenceList"></div>
+          </div>
         </div>
-        <div class="panel-block">
-          <h3>业务原子模型</h3>
-          <div id="modelList"></div>
-        </div>
-        <div class="panel-block">
-          <h3>参考物与证据链</h3>
-          <div id="referenceList"></div>
+        <div class="artifact-detail-view" id="artifactDetailView" style="display:none">
+          <header class="artifact-detail-head">
+            <button class="artifact-back-button" id="artifactBackButton" type="button" aria-label="返回产物列表">← 返回</button>
+            <h3 id="artifactDetailTitle"></h3>
+          </header>
+          <div class="artifact-detail-content" id="artifactDetailContent"></div>
         </div>
       </aside>
     </section>
@@ -160,6 +185,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=20260715-5"></script>
   </body>
 </html>

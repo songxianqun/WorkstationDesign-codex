@@ -329,15 +329,23 @@ const leaderTasks = [
   }
 ];
 
-const roleTasks = {
+const roleTaskTemplates = {
   employee: employeeTasks,
   leader: leaderTasks
 };
 
+const roleTasks = {
+  employee: [],
+  leader: []
+};
+
 let currentRole = "employee";
+let customPrompts = { employee: [], leader: [] };
+let promptOrders = { employee: null, leader: null };
+let hiddenPresets = { employee: [], leader: [] };
 let tasks = roleTasks[currentRole];
 
-let activeTaskId = tasks[0].id;
+let activeTaskId = tasks[0]?.id || "";
 let draggedTaskId = null;
 let incomingInvitationCreated = false;
 let pendingCloseTaskId = null;
@@ -500,7 +508,7 @@ let aiToolCards = [];
 let cardOrder = [...tasks.map((task) => task.id), ...aiToolCards.map((tool) => tool.id)];
 const roleCardOrders = {
   employee: [...cardOrder],
-  leader: [...leaderTasks.map((task) => task.id), ...aiToolCards.map((tool) => tool.id)]
+  leader: [...aiToolCards.map((tool) => tool.id)]
 };
 
 const quickPromptPresets = {
@@ -509,24 +517,51 @@ const quickPromptPresets = {
     ["合规检查", "检查这份产品推荐材料是否存在适当性风险"],
     ["生成材料", "根据当前客户和项目上下文生成一版正式材料"],
     ["会议纪要", "整理昨日会议纪要并拆解待办事项"],
-    ["业务推荐", "business"]
+    ["更多发现", "shortcuts"]
   ],
   leader: [
     ["审批事项", "汇总今日需要我审批的事项，按紧急程度给出处理建议"],
     ["风险预警", "梳理当前需要我关注的高风险事项和处理建议"],
     ["项目督办", "生成重点项目推进和卡点督办清单"],
-    ["会议安排", "汇总我今天剩余会议安排、会前材料和需要提前确认的问题"]
+    ["会议安排", "汇总我今天剩余会议安排、会前材料和需要提前确认的问题"],
+    ["更多发现", "shortcuts"]
   ]
 };
 
-const businessRecommendations = [
-  ["财富管理业务推荐", "识别客户资产配置缺口，生成适配的服务建议"],
-  ["投行业务机会识别", "从客户、行业和项目线索中发现潜在投行业务"],
-  ["机构客户服务建议", "为机构客户生成研究、交易和综合服务动作"],
-  ["融资融券业务提醒", "识别适合跟进的两融客户和风险边界"],
-  ["产品适配建议", "根据客户画像和适当性要求推荐可讨论方向"],
-  ["客户流失风险挽回", "识别资产异动客户并生成挽回沟通方案"]
-];
+const emptyWorkbenchRecommendations = {
+  employee: [
+    { category: "机会识别", items: [
+      ["帮我从近期企业客户线索里识别 ABS 业务机会", "梳理近期客户和项目线索，识别 ABS 业务机会并给出推进建议", "ABS机会"],
+      ["根据机构客户关注点，生成综合服务机会建议", "根据机构客户近期关注点，生成投研、交易和综合服务建议", "机构服务"]
+    ]},
+    { category: "客户服务", items: [
+      ["结合客户资产结构，生成一版信托理财配置建议", "结合客户资产结构，生成信托理财业务适配建议和风险提示", "信托配置"],
+      ["整理融资融券业务操作指引和客户沟通口径", "整理融资融券业务操作指引、适当性要求和客户沟通口径", "融资融券"],
+      ["汇总研究所最新研报，提炼可转发客户的观点", "汇总研究所最新研报观点，并提炼可用于客户沟通的要点", "研报观点"],
+      ["查看最新理财产品发售信息，并筛选可跟进客户", "查看最新理财产品发售信息，筛选适合跟进的客户范围", "产品筛选"]
+    ]},
+    { category: "风险与政策", items: [
+      ["整理公募基金费率新规对客户服务的影响", "整理公募基金费率新规要点，并说明对客户服务和产品销售的影响", "费率新规"],
+      ["识别近期资产异动客户，生成流失挽回动作", "识别近期资产异动客户，生成客户挽回动作和沟通材料", "客户挽回"]
+    ]}
+  ],
+  leader: [
+    { category: "监管与行业", items: [
+      ["汇总最新监管资讯，提炼管理层需要关注的动作", "汇总最新监管资讯，提炼需要管理层关注的影响和应对动作", "监管资讯"],
+      ["整理证券行业最新动态，分析对公司业务的影响", "整理证券行业最新动态，分析对公司业务和风险管理的影响", "行业动态"]
+    ]},
+    { category: "经营分析", items: [
+      ["汇总各部门业务开展情况，识别亮点和卡点", "汇总各部门近期业务开展情况，识别亮点、卡点和需要协调的问题", "部门汇总"],
+      ["分析公司最新费用控制情况和异常支出线索", "汇总公司最新费用控制情况，识别异常支出和优化建议", "费用分析"]
+    ]},
+    { category: "管理与决策", items: [
+      ["查看重点项目最新进展和需要我介入的事项", "汇总重点项目最新进展、责任人、卡点和需要领导介入的事项", "项目督办"],
+      ["梳理今日待审批事项，并按紧急程度排序", "梳理今日待审批事项，按紧急程度和业务影响给出处理建议", "待审事项"],
+      ["汇总当前高风险事项，给出优先处置顺序", "汇总当前高风险事项，按影响范围和处置优先级排序", "风险处置"],
+      ["整理今日会议安排和会前需要确认的问题", "整理今日会议安排、会前材料和需要提前确认的决策问题", "会议安排"]
+    ]}
+  ]
+};
 
 const lane = document.getElementById("taskLane");
 const lanePrev = document.getElementById("lanePrev");
@@ -542,7 +577,7 @@ const artifactList = document.getElementById("artifactList");
 const modelList = document.getElementById("modelList");
 const referenceList = document.getElementById("referenceList");
 const toast = document.getElementById("toast");
-const topPreprocessed = document.getElementById("topPreprocessed");
+const refreshAutopilotTasksButton = document.getElementById("refreshAutopilotTasks");
 const sourceModal = document.getElementById("sourceModal");
 const sourceTitle = document.getElementById("sourceTitle");
 const sourceContent = document.getElementById("sourceContent");
@@ -552,7 +587,7 @@ const closeTaskText = document.getElementById("closeTaskText");
 const toolConfigModal = document.getElementById("toolConfigModal");
 const toolConfigList = document.getElementById("toolConfigList");
 const quickPrompts = document.getElementById("quickPrompts");
-const businessMenu = document.getElementById("businessMenu");
+const shortcutMenu = document.getElementById("shortcutMenu");
 
 function stateClass(state) {
   return {
@@ -599,17 +634,47 @@ function renderTaskCard(task) {
       </article>`;
 }
 
-function renderTasks() {
-  const previousLaneScroll = lane.scrollLeft;
-  renderMetrics();
-  lane.innerHTML = getWorkbenchCards()
+function renderEmptyWorkbench() {
+  const recommendations = emptyWorkbenchRecommendations[currentRole] || [];
+  const title = "输入信息开启工作";
+  const titleChars = title
+    .split("")
     .map(
-      (task) =>
-        task.type === "aiTool"
-          ? renderAiToolCard(task)
-          : renderTaskCard(task)
+      (ch, i) =>
+        `<span class="title-char" style="animation-delay:${i * 70}ms">${ch}</span>`
     )
     .join("");
+  return `
+    <div class="empty-workbench">
+      <h2 class="typing-title">${titleChars}</h2>
+      <div class="empty-recommendations">
+        ${recommendations
+          .flatMap((group) => group.items)
+          .map(
+            ([label, prompt]) => `
+              <button type="button" data-empty-prompt="${prompt}">${label}</button>`
+          )
+          .join("")}
+      </div>
+    </div>`;
+}
+
+function renderTasks() {
+  const previousLaneScroll = lane.scrollLeft;
+  updateRefreshButtonState();
+  const cards = getWorkbenchCards();
+  lane.closest(".task-board")?.classList.toggle("empty", !cards.length);
+  lane.innerHTML = cards.length
+    ? cards.map((task) => (task.type === "aiTool" ? renderAiToolCard(task) : renderTaskCard(task))).join("")
+    : renderEmptyWorkbench();
+
+  lane.querySelectorAll("[data-empty-prompt]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const prompt = button.dataset.emptyPrompt;
+      composerInput.value = "";
+      createTaskFromPrompt(prompt);
+    });
+  });
 
   bindTaskBodyActions(lane);
 
@@ -629,7 +694,7 @@ function renderTasks() {
   document.querySelectorAll("[data-close-task]").forEach((button) => {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      openCloseTaskDialog(event.currentTarget.dataset.closeTask);
+      openCloseTaskDialog(event.currentTarget.dataset.closeTask, event.currentTarget);
     });
   });
 
@@ -766,35 +831,135 @@ function renderQuickPrompts() {
   quickPrompts.querySelectorAll(".role-prompt").forEach((button) => button.remove());
   const quickAddWrap = document.querySelector(".quick-add-wrap");
 
-  quickPromptPresets[currentRole].forEach(([label, prompt]) => {
+  const hidden = hiddenPresets[currentRole] || [];
+  const presetItems = quickPromptPresets[currentRole]
+    .filter(([, value]) => !hidden.includes(value))
+    .map(([label, value]) => ({ label, value, key: value, isCustom: false }));
+  const customItems = (customPrompts[currentRole] || []).map(({ id, label, prompt }) => ({
+    label, value: prompt, key: id, isCustom: true, customId: id,
+  }));
+  const allItems = [...presetItems, ...customItems];
+
+  const order = promptOrders[currentRole];
+  let orderedItems;
+  if (order) {
+    orderedItems = order.map((key) => allItems.find((it) => it.key === key)).filter(Boolean);
+    allItems.forEach((it) => { if (!order.includes(it.key)) orderedItems.push(it); });
+  } else {
+    orderedItems = allItems;
+  }
+
+  orderedItems.forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "role-prompt";
-    button.textContent = label;
-    if (prompt === "business") {
-      button.dataset.businessMenu = "true";
+    button.className = "role-prompt" + (item.isCustom ? " custom-prompt" : "");
+    button.dataset.promptKey = item.key;
+    if (item.value === "shortcuts") {
+      button.dataset.shortcuts = "true";
+    } else if (item.isCustom) {
+      button.dataset.customPrompt = item.value;
+      button.dataset.customId = item.customId;
     } else {
-      button.dataset.prompt = prompt;
+      button.dataset.prompt = item.value;
     }
+    button.textContent = item.label;
+    const badge = document.createElement("span");
+    badge.className = "prompt-delete-badge";
+    button.appendChild(badge);
     quickPrompts.insertBefore(button, quickAddWrap);
   });
 }
 
-function renderBusinessMenu() {
-  businessMenu.innerHTML = businessRecommendations
+function generateShortLabel(prompt) {
+  const topics = [
+    "ABS", "两融", "融资融券", "信托", "基金", "理财", "研报", "产品",
+    "客户", "资产", "风险", "审批", "费用", "项目", "会议",
+    "监管", "行业", "部门", "配置", "沟通", "材料", "纪要",
+    "督办", "预警", "异动", "新规", "费率", "业务", "机会",
+  ];
+  const actions = ["分析", "整理", "汇总", "梳理", "识别", "生成", "检查", "准备", "安排", "筛选", "挽回"];
+  const foundTopics = topics.filter((t) => prompt.includes(t));
+  const foundAction = actions.find((a) => prompt.includes(a));
+  if (foundTopics.length >= 1 && foundAction) {
+    return (foundTopics[0] + foundAction).slice(0, 6);
+  }
+  if (foundTopics.length >= 2) {
+    return foundTopics.slice(0, 2).join("").slice(0, 6);
+  }
+  if (foundTopics.length === 1) {
+    return foundTopics[0].slice(0, 6);
+  }
+  return prompt.replace(/^(帮我|请|帮|来)/, "").slice(0, 4);
+}
+
+function toggleManageMode() {
+  const isOn = quickPrompts.classList.toggle("manage-mode");
+  if (isOn) {
+    showToast("点击 - 号移除快捷气泡，长按可拖拽排序");
+  } else {
+    showToast("已退出管理");
+  }
+}
+
+function addCustomPrompt(shortLabel, prompt) {
+  if ((customPrompts[currentRole] || []).some((p) => p.prompt === prompt)) {
+    showToast("该提示词已添加");
+    return;
+  }
+  customPrompts[currentRole] = customPrompts[currentRole] || [];
+  customPrompts[currentRole].push({ id: `cp_${Date.now()}`, label: shortLabel, prompt });
+  renderQuickPrompts();
+  showToast(`已添加「${shortLabel}」`);
+}
+
+function renderShortcutMenu() {
+  const groups = emptyWorkbenchRecommendations[currentRole] || [];
+  shortcutMenu.innerHTML = groups
     .map(
-      ([title, desc]) => `
-        <button type="button" data-business-prompt="${title}">
-          <strong>${title}</strong>
-          <small>${desc}</small>
-        </button>`
+      (group) => `
+        <div class="shortcut-group">
+          <p class="shortcut-group-label">${group.category}</p>
+          ${group.items
+            .map(
+              ([label, prompt, shortLabel]) => `
+            <div class="shortcut-item">
+              <button type="button" data-shortcut-prompt="${prompt}">
+                <span class="shortcut-text">
+                  <strong>${label}</strong>
+                  <small>${prompt}</small>
+                </span>
+              </button>
+              <button type="button" class="shortcut-add-btn" data-shortcut-add="${prompt}" data-short-label="${shortLabel}" aria-label="添加为常用提示词" title="添加为常用提示词">
+                <span class="shortcut-add-icon">+</span>
+              </button>
+            </div>`
+            )
+            .join("")}
+        </div>`
     )
     .join("");
 }
 
-function closeBusinessMenu() {
-  businessMenu.classList.remove("open");
-  businessMenu.setAttribute("aria-hidden", "true");
+function closeShortcutMenu() {
+  shortcutMenu.classList.remove("open");
+  shortcutMenu.setAttribute("aria-hidden", "true");
+}
+
+function cloneRoleTasks(role) {
+  return JSON.parse(JSON.stringify(roleTaskTemplates[role] || []));
+}
+
+function refreshAutopilotTasks() {
+  roleTasks[currentRole] = cloneRoleTasks(currentRole);
+  tasks = roleTasks[currentRole];
+  activeTaskId = tasks[0]?.id || "";
+  cardOrder = [...tasks.map((task) => task.id), ...aiToolCards.map((tool) => tool.id)];
+  roleCardOrders[currentRole] = [...cardOrder];
+  closeTask();
+  renderTasks();
+  lane.scrollLeft = 0;
+  updateLaneArrows();
+  showToast(currentRole === "leader" ? "已刷新领导视角自动驾驶分派任务" : "已刷新一线业务人员自动驾驶分派任务");
 }
 
 function switchRole(role) {
@@ -804,13 +969,17 @@ function switchRole(role) {
   tasks = roleTasks[currentRole];
   cardOrder = roleCardOrders[currentRole] ? [...roleCardOrders[currentRole]] : [...tasks.map((task) => task.id), ...aiToolCards.map((tool) => tool.id)];
   activeTaskId = tasks[0]?.id || "";
-  closeBusinessMenu();
   closeTask();
   syncCardOrder();
   document.querySelectorAll("[data-role]").forEach((button) => {
     button.classList.toggle("active", button.dataset.role === currentRole);
   });
+  const roleLabel = document.getElementById("userRoleLabel");
+  if (roleLabel) roleLabel.textContent = currentRole === "leader" ? "领导视角" : "一线业务人员";
+  closeUserDropdown();
+  quickPrompts.classList.remove("manage-mode");
   renderQuickPrompts();
+  renderShortcutMenu();
   renderTasks();
   showToast(currentRole === "leader" ? "已切换到领导视角" : "已切换到一线业务人员视角");
 }
@@ -869,7 +1038,6 @@ function renderTaskBody(task) {
   if (task.liveMode) {
     return `
       <div class="live-agent-panel">
-        <p class="live-agent-title">任务 Agent 实时执行</p>
         <div class="mini-thread live-thread" id="mini-thread-${task.id}">
           ${renderMiniThread(task)}
         </div>
@@ -1013,13 +1181,13 @@ function reorderTasks(sourceId, targetId) {
   updateLaneArrows();
 }
 
-function renderMetrics() {
-  const preprocessed = tasks.filter((task) => task.state !== "running").length;
-
-  if (topPreprocessed) {
-    topPreprocessed.textContent =
-      currentRole === "leader" ? `AI 已汇总 ${preprocessed} 项管理事项` : `AI 已预处理 ${preprocessed} 项`;
-  }
+function updateRefreshButtonState() {
+  if (!refreshAutopilotTasksButton) return;
+  const taskCount = tasks.length;
+  refreshAutopilotTasksButton.textContent = taskCount ? "重新刷新任务" : "自动驾驶任务刷新";
+  refreshAutopilotTasksButton.title = taskCount
+    ? "重新生成当前角色的自动驾驶任务卡片"
+    : "生成当前角色的自动驾驶任务卡片";
 }
 
 function toggleTaskPin(id) {
@@ -1120,11 +1288,22 @@ function clearUnreadDone(id, shouldRender = true) {
   if (shouldRender) updateSingleTaskCard(task);
 }
 
-function openCloseTaskDialog(id) {
+function positionCloseTaskPopover(anchor) {
+  if (!anchor) return;
+  const rect = anchor.getBoundingClientRect();
+  const popoverWidth = Math.min(268, window.innerWidth - 24);
+  const left = Math.min(window.innerWidth - popoverWidth - 12, Math.max(12, rect.right - popoverWidth));
+  const top = Math.min(window.innerHeight - 132, rect.bottom + 8);
+  closeTaskModal.style.left = `${left}px`;
+  closeTaskModal.style.top = `${Math.max(12, top)}px`;
+}
+
+function openCloseTaskDialog(id, anchor = null) {
   const task = tasks.find((item) => item.id === id);
   if (!task) return;
   pendingCloseTaskId = id;
-  closeTaskText.textContent = `关闭「${task.title}」前，请选择该任务是已完成还是未完成。`;
+  closeTaskText.textContent = `关闭「${task.title}」前选择状态。`;
+  positionCloseTaskPopover(anchor);
   closeTaskModal.classList.add("open");
   closeTaskModal.setAttribute("aria-hidden", "false");
 }
@@ -1132,6 +1311,7 @@ function openCloseTaskDialog(id) {
 function closeCloseTaskDialog() {
   closeTaskModal.classList.remove("open");
   closeTaskModal.setAttribute("aria-hidden", "true");
+  closeTaskModal.removeAttribute("style");
   pendingCloseTaskId = null;
 }
 
@@ -1235,18 +1415,35 @@ function updateLaneArrows() {
 }
 
 function scrollLane(direction) {
-  lane.scrollBy({
-    left: getLaneStep() * direction,
-    behavior: "smooth"
-  });
-  window.setTimeout(updateLaneArrows, 260);
+  const target = lane.scrollLeft + getLaneStep() * direction;
+  const maxScroll = lane.scrollWidth - lane.clientWidth;
+  const clamped = Math.max(0, Math.min(target, maxScroll));
+  const start = lane.scrollLeft;
+  const distance = clamped - start;
+  if (Math.abs(distance) < 1) { updateLaneArrows(); return; }
+  const duration = 300;
+  const startTime = performance.now();
+  function step(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    lane.scrollLeft = start + distance * eased;
+    if (t < 1) {
+      window.requestAnimationFrame(step);
+    } else {
+      lane.scrollLeft = clamped;
+      updateLaneArrows();
+    }
+  }
+  window.requestAnimationFrame(step);
 }
 
 function renderAssetList(container, items) {
+  const sectionKey = container.id;
   container.innerHTML = items
     .map(
-      ([name, meta]) => `
-      <div class="asset">
+      ([name, meta], index) => `
+      <div class="asset" data-artifact-section="${sectionKey}" data-artifact-index="${index}">
         <strong>${name}</strong>
         <span>${meta}</span>
       </div>`
@@ -1484,11 +1681,22 @@ AI 建议：
 }
 
 function detectNewTaskIntent(prompt) {
+  if (prompt.includes("ABS")) return "absOpportunity";
+  if ((prompt.includes("两融") || prompt.includes("融资融券")) && (prompt.includes("分析") || prompt.includes("趋势") || prompt.includes("变化") || prompt.includes("余额"))) return "marginAnalysis";
+  if (prompt.includes("信托") || prompt.includes("理财配置")) return "trustWealth";
+  if (prompt.includes("融资融券") || prompt.includes("两融")) return "marginGuide";
+  if (prompt.includes("研报") || prompt.includes("研究所")) return "researchBrief";
+  if (prompt.includes("理财产品") || prompt.includes("产品发行") || prompt.includes("发售")) return "wealthProduct";
+  if (prompt.includes("公募基金") || prompt.includes("费率新规") || prompt.includes("费率")) return "fundFeeRule";
+  if (prompt.includes("监管资讯") || prompt.includes("监管动态")) return "regulationBrief";
+  if (prompt.includes("证券行业") || prompt.includes("行业动态")) return "industryBrief";
+  if (prompt.includes("各部门") || prompt.includes("部门业务")) return "departmentBrief";
+  if (prompt.includes("费用控制") || prompt.includes("异常支出")) return "expenseControl";
   if (prompt.includes("审批") || prompt.includes("批复")) return "approval";
   if (prompt.includes("会议安排") || prompt.includes("今日会议") || prompt.includes("日程")) return "meetingSchedule";
   if (prompt.includes("经营日报") || prompt.includes("经营情况") || prompt.includes("经营重点")) return "operation";
   if (prompt.includes("风险预警") || prompt.includes("高风险") || prompt.includes("风险事项")) return "risk";
-  if (prompt.includes("项目督办") || prompt.includes("项目推进") || prompt.includes("卡点督办")) return "project";
+  if (prompt.includes("项目督办") || prompt.includes("项目推进") || prompt.includes("项目最新进展") || prompt.includes("项目进展") || prompt.includes("卡点督办")) return "project";
   if (prompt.includes("团队负荷") || prompt.includes("阻塞节点") || prompt.includes("资源调配")) return "team";
   if (prompt.includes("会议准备") || prompt.includes("会议议程") || prompt.includes("经营会议")) return "meeting";
   if (prompt.includes("业务推荐") || prompt.includes("业务机会") || prompt.includes("产品适配") || prompt.includes("客户流失")) return "business";
@@ -1504,6 +1712,131 @@ function detectNewTaskIntent(prompt) {
   if (prompt.includes("生成材料") || prompt.includes("正式材料")) return "material";
   if (prompt.includes("会议纪要") || prompt.includes("待办事项")) return "minutes";
   return "general";
+}
+
+function buildTopicPreset(prompt, intent) {
+  const topics = {
+    absOpportunity: {
+      title: "ABS 业务机会识别",
+      business: "投行与机构业务",
+      focus: "ABS 业务机会",
+      points: ["筛选近 90 日有稳定现金流或应收账款特征的企业客户。", "识别供应链、租赁、小贷、物业收费等可证券化资产线索。", "生成客户初筛清单、切入话术和投行团队协同建议。"],
+      next: ["确认目标客户筛选口径。", "生成 ABS 业务机会清单。", "邀请投行同事做初步可行性判断。"]
+    },
+    trustWealth: {
+      title: "信托理财配置建议",
+      business: "财富管理",
+      focus: "信托理财配置",
+      points: ["结合客户资产结构、风险偏好和流动性需求筛选适配方向。", "区分家族信托、现金管理、稳健配置和期限错配风险。", "生成适合客户沟通的配置建议和风险提示。"],
+      next: ["确认客户风险等级和投资期限。", "生成信托理财沟通材料。", "补充适当性说明和免责声明。"]
+    },
+    marginGuide: {
+      title: "融资融券操作指引",
+      business: "信用业务",
+      focus: "融资融券业务操作",
+      points: ["整理开户、授信、担保品、维持担保比例和风险揭示流程。", "标出客户准入、适当性、集中度和强平风险沟通要点。", "生成客户经理可直接使用的操作清单。"],
+      next: ["确认目标客户是否满足准入条件。", "生成两融业务沟通口径。", "整理风险提示和操作指引。"]
+    },
+    marginAnalysis: {
+      title: "两融余额趋势分析",
+      business: "信用业务",
+      focus: "两融余额变化趋势",
+      points: ["已拉取近两周沪深北两融余额逐日数据。", "已拆解融资 vs 融券减量结构、板块分布和资金方向。", "已交叉验证行情回调、成长板块波动和杠杆资金风险偏好变化。"],
+      next: ["确认是否生成客户版简评。", "选择是否加深行业或板块层面分析。", "订阅后续两融数据变动提醒。"]
+    },
+    researchBrief: {
+      title: "研究所研报资讯",
+      business: "投研服务",
+      focus: "研究所最新研报",
+      points: ["汇总近期重点行业和公司研报观点。", "提炼适合客户沟通的核心结论、风险点和关注指标。", "把研究观点转换成客户可理解的服务话术。"],
+      next: ["选择行业或客户范围。", "生成客户版研报摘要。", "订阅后续研报更新提醒。"]
+    },
+    wealthProduct: {
+      title: "理财产品发行信息",
+      business: "财富管理",
+      focus: "最新理财产品发售",
+      points: ["整理近期新发理财产品、期限、风险等级和募集时间。", "匹配产品适当性和客户持仓到期情况。", "生成可跟进客户清单和合规沟通话术。"],
+      next: ["筛选适合跟进客户。", "生成产品发售信息摘要。", "生成客户沟通材料。"]
+    },
+    fundFeeRule: {
+      title: "公募基金费率新规解读",
+      business: "产品与合规",
+      focus: "公募基金费率新规",
+      points: ["梳理费率调整、销售服务、客户告知和存量产品影响。", "识别对客户服务、产品推荐和合规披露的影响。", "生成客户经理内部培训要点和客户问答口径。"],
+      next: ["生成新规要点摘要。", "整理客户问答话术。", "标出需要合规确认的事项。"]
+    },
+    regulationBrief: {
+      title: "最新监管资讯速览",
+      business: "经营管理",
+      focus: "监管资讯",
+      points: ["汇总近期监管发布、窗口指导和行业处罚案例。", "提炼对财富、投行、机构、合规和运营条线的影响。", "生成管理层需要关注的行动清单。"],
+      next: ["确认需重点关注的监管事项。", "生成管理层通报。", "分派责任部门跟进。"]
+    },
+    industryBrief: {
+      title: "证券行业动态分析",
+      business: "战略与经营",
+      focus: "证券行业最新动态",
+      points: ["整理券商业务创新、监管趋势、资管产品和机构服务动态。", "分析对公司业务布局、风险管理和客户服务的影响。", "生成管理层讨论提纲。"],
+      next: ["生成行业动态摘要。", "标出对公司业务的影响。", "形成管理层讨论问题。"]
+    },
+    departmentBrief: {
+      title: "部门业务开展情况",
+      business: "经营管理",
+      focus: "各部门业务情况",
+      points: ["汇总财富、投行、机构、研究、合规等部门近期进展。", "识别业务亮点、项目卡点和跨部门协同事项。", "生成需要领导协调的问题清单。"],
+      next: ["查看部门业务摘要。", "识别卡点责任人。", "生成部门协同督办事项。"]
+    },
+    expenseControl: {
+      title: "费用控制情况分析",
+      business: "财务管理",
+      focus: "费用控制",
+      points: ["汇总本月费用执行、预算占用和异常支出线索。", "识别差旅、营销、项目费用和外部服务费用中的偏离项。", "生成费用控制建议和需审批事项。"],
+      next: ["查看异常费用明细。", "生成费用控制建议。", "形成需要审批或问询的事项。"]
+    }
+  };
+
+  const topic = topics[intent];
+  if (!topic) return null;
+
+  if (intent === "marginAnalysis") {
+    return {
+      title: topic.title,
+      business: topic.business,
+      summary: topic.points,
+      nextSteps: topic.next,
+      actions: ["生成客户简评", "加深板块分析", "订阅提醒", "发送客户"],
+      artifacts: [["两融余额走势图", "Chart · 近 14 日"], ["板块资金明细", "Table · 净偿还 Top 10"], ["客户简评", "Doc · 初稿"]],
+      models: [["两融数据抓取模型", "已完成"], ["板块资金归因模型", "已完成"], ["市场情绪分析模型", "已完成"]],
+      references: [["沪深北交易所数据", "截至 7/14"], ["证券时报", "引用 2 条"], ["上海证券报", "引用 1 条"]],
+      output: `正在分析近期两融余额变化趋势：${prompt}\n\n数据口径：截至 2026-07-14，来源为沪深北交易所公开数据。\n\n一、整体走势概况\n- 前期阶段：两融余额整体上行，7 月 1 日达阶段性高点 30,305 亿元（历史次高），杠杆资金处于高位，以融资多头为主，集中在科技成长板块。（来源：证券时报）\n- 近期阶段：自 7 月 2 日起进入连续回落周期，截至 7 月 14 日实现九连降。\n  · 7 月 14 日沪深北全市场两融余额：28,994.39 亿元\n  · 期间累计减少：1,310.35 亿元\n  · 其中融资余额：28,781.18 亿元（主力减量来源，融资盘主动偿还）\n  · 融券余额：仅小幅波动，不是减量主力\n  · 分市场：沪市、深市均同步下滑，深市减量压力尤为明显；北交所体量小影响有限\n  · 单日特征：7 月 13 日单日减少 345.78 亿元，是春节后最大单日降幅，体现杠杆资金集中降杠杆行为（来源：证券时报）\n\n二、结构特征\n1. 核心减量来源：融资盘集中偿还\n   - 主力流出板块：电子、电力设备、有色金属等前期热门成长赛道（AI、芯片、半导体相关个股），是融资净偿还主力\n   - 少数抗跌板块：国防军工、钢铁等偏防御板块有少量融资净买入，整体占比很小，无法扭转整体降杠杆趋势（来源：上海证券报）\n   - 融券余额整体体量较小、变化幅度有限，不是本轮余额下滑主因，主要是多头主动减仓，而非空头大规模融券做空\n\n2. 市场情绪特征：风险偏好明显回落，杠杆资金趋于谨慎，短期投机资金快速离场，成交活跃度随之下降\n\n三、核心驱动原因\n1. 大盘整体回调、成长板块大幅波动，持仓浮亏带来“平仓压力 + 主动风控减仓”，杠杆资金风险偏好快速下行\n2. 前期高点融资盘集中入场成长赛道，板块回调后被迫降杠杆，形成“下跌→偿还→进一步卖出”的负反馈\n3. 部分投资者主动转向防御策略，将资金从高波动品种撤出，转入低风险或现金管理方向\n\n我已生成两融余额走势图、板块资金明细和客户简评初稿。你可以继续让我按客户分层、板块维度或时间区间展开，也可以直接生成可转发客户的简版摘要。`
+    };
+  }
+
+  return {
+    title: topic.title,
+    business: topic.business,
+    summary: topic.points,
+    nextSteps: topic.next,
+    actions: ["生成清单", "补充依据", "邀请同事", "形成材料"],
+    artifacts: [[`${topic.focus}分析清单`, "Table · 初稿"], ["沟通与处理建议", "Doc · 待确认"]],
+    models: [["意图识别模型", "已完成"], ["业务机会识别模型", "已完成"], ["合规边界校验模型", "已完成"]],
+    references: [["用户提示词", "已留痕"], ["企业知识库", "已检索"], ["历史服务记录", "已关联"]],
+    output: `正在处理：${prompt}
+
+我已按「${topic.focus}」方向生成初步分析。
+
+已完成的判断：
+- ${topic.points[0]}
+- ${topic.points[1]}
+- ${topic.points[2]}
+
+建议下一步：
+- ${topic.next[0]}
+- ${topic.next[1]}
+- ${topic.next[2]}
+
+我已生成「${topic.focus}分析清单」和「沟通与处理建议」初稿。你可以继续让我补充客户范围、数据依据、合规边界或生成正式材料。`
+  };
 }
 
 function buildNewTaskPreset(prompt) {
@@ -1888,7 +2221,7 @@ AI 已生成：
     }
   };
 
-  return presets[intent] || {
+  return presets[intent] || buildTopicPreset(prompt, intent) || {
     title: prompt.length > 18 ? `${prompt.slice(0, 18)}...` : prompt,
     business: "AI 自动创建",
     summary: ["已接收员工目标，正在拆解任务路径。", "正在识别所需数据权限、业务原子模型和协同人员。", "完成后将在右上角更新最新状态，并提醒你确认。"],
@@ -1961,7 +2294,7 @@ function buildInlineActionPrompt(task, action) {
 }
 
 function updateSingleTaskCard(task) {
-  renderMetrics();
+  updateRefreshButtonState();
   const card = document.getElementById(`card-${task.id}`);
   if (!card) {
     renderTasks();
@@ -2124,7 +2457,6 @@ function createTaskFromPrompt(prompt) {
     models: preset.models,
     references: preset.references,
     conversation: [
-      ["system", "新任务已创建，公司自动驾驶大模型正在进行任务拆解。"],
       ["user", prompt],
       aiMessage
     ]
@@ -2234,10 +2566,22 @@ function addIncomingInvitation() {
 
 composerForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const prompt = composerInput.value.trim();
-  if (!prompt) return;
+  const raw = composerInput.value.trim();
+  if (!raw) return;
   composerInput.value = "";
-  createTaskFromPrompt(prompt);
+
+  const addMatch = raw.match(/^添加常用提示词：【(.+?)】$/);
+  if (addMatch) {
+    const prompt = addMatch[1].trim();
+    if (prompt && prompt !== "请输入提示词") {
+      const shortLabel = generateShortLabel(prompt);
+      addCustomPrompt(shortLabel, prompt);
+      createTaskFromPrompt(prompt);
+    }
+    return;
+  }
+
+  createTaskFromPrompt(raw);
 });
 
 const quickAddWrap = document.querySelector(".quick-add-wrap");
@@ -2245,31 +2589,75 @@ const quickAddButton = document.getElementById("quickAddButton");
 const quickAddMenu = document.getElementById("quickAddMenu");
 
 quickPrompts.addEventListener("click", (event) => {
+  // In manage mode, clicking the delete badge removes the prompt
+  const deleteBadge = event.target.closest(".prompt-delete-badge");
+  if (deleteBadge) {
+    event.stopPropagation();
+    const btn = deleteBadge.closest(".role-prompt");
+    if (!btn) return;
+    const key = btn.dataset.promptKey;
+    if (btn.classList.contains("custom-prompt")) {
+      customPrompts[currentRole] = (customPrompts[currentRole] || []).filter((p) => p.id !== key);
+    } else {
+      hiddenPresets[currentRole] = hiddenPresets[currentRole] || [];
+      hiddenPresets[currentRole].push(key);
+    }
+    // Also remove from promptOrders
+    if (promptOrders[currentRole]) {
+      promptOrders[currentRole] = promptOrders[currentRole].filter((k) => k !== key);
+    }
+    renderQuickPrompts();
+    showToast("已移除");
+    return;
+  }
+
+  // In manage mode, don't trigger normal button actions
+  if (quickPrompts.classList.contains("manage-mode")) return;
+
   const promptButton = event.target.closest("[data-prompt]");
-  const businessButton = event.target.closest("[data-business-menu]");
-  const businessPrompt = event.target.closest("[data-business-prompt]");
+  const shortcutButton = event.target.closest("[data-shortcuts]");
+  const shortcutPrompt = event.target.closest("[data-shortcut-prompt]");
 
   if (promptButton) {
     composerInput.value = promptButton.dataset.prompt;
     composerInput.focus();
-    closeBusinessMenu();
+    closeShortcutMenu();
     return;
   }
 
-  if (businessButton) {
+  if (shortcutButton) {
     event.stopPropagation();
-    businessMenu.classList.toggle("open");
-    businessMenu.setAttribute("aria-hidden", String(!businessMenu.classList.contains("open")));
+    const btnRect = shortcutButton.getBoundingClientRect();
+    const containerRect = quickPrompts.getBoundingClientRect();
+    const menuWidth = Math.min(480, window.innerWidth - 48);
+    let leftPos = btnRect.left - containerRect.left;
+    leftPos = Math.max(8, Math.min(leftPos, containerRect.width - menuWidth - 8));
+    shortcutMenu.style.left = `${leftPos}px`;
+    shortcutMenu.classList.toggle("open");
+    shortcutMenu.setAttribute("aria-hidden", String(!shortcutMenu.classList.contains("open")));
     return;
   }
 
-  if (businessPrompt) {
-    const title = businessPrompt.dataset.businessPrompt;
-    const option = businessRecommendations.find(([name]) => name === title);
-    composerInput.value = `请基于我的客户、项目和历史沟通记录，生成「${title}」任务，并说明推荐依据、适用边界和下一步动作。`;
+  const shortcutAdd = event.target.closest("[data-shortcut-add]");
+
+  if (shortcutAdd) {
+    event.stopPropagation();
+    addCustomPrompt(shortcutAdd.dataset.shortLabel, shortcutAdd.dataset.shortcutAdd);
+    closeShortcutMenu();
+    return;
+  }
+
+  if (shortcutPrompt) {
+    const prompt = shortcutPrompt.dataset.shortcutPrompt;
+    closeShortcutMenu();
+    createTaskFromPrompt(prompt);
+  }
+
+  const customPromptBtn = event.target.closest("[data-custom-prompt]");
+  if (customPromptBtn) {
+    composerInput.value = customPromptBtn.dataset.customPrompt;
     composerInput.focus();
-    closeBusinessMenu();
-    showToast(`已选择${option?.[0] || title}`);
+    return;
   }
 });
 
@@ -2277,7 +2665,7 @@ quickAddButton.addEventListener("click", (event) => {
   event.stopPropagation();
   const isOpen = quickAddWrap.classList.toggle("open");
   quickAddMenu.setAttribute("aria-hidden", String(!isOpen));
-  closeBusinessMenu();
+  closeShortcutMenu();
 });
 
 quickAddMenu.querySelectorAll("button").forEach((button) => {
@@ -2290,19 +2678,31 @@ quickAddMenu.querySelectorAll("button").forEach((button) => {
       return;
     }
 
+    if (type === "manage-prompts") {
+      quickAddWrap.classList.remove("open");
+      quickAddMenu.setAttribute("aria-hidden", "true");
+      toggleManageMode();
+      return;
+    }
+
+    if (type === "prompt") {
+      quickAddWrap.classList.remove("open");
+      quickAddMenu.setAttribute("aria-hidden", "true");
+      composerInput.value = "添加常用提示词：【请输入提示词】";
+      const start = composerInput.value.indexOf("【") + 1;
+      const end = composerInput.value.indexOf("】");
+      composerInput.setSelectionRange(start, end);
+      composerInput.focus();
+      return;
+    }
+
     const labelMap = {
       skill: "已添加 Skill：合规审查助手",
-      mcp: "已添加 MCP：客户数据连接器",
-      prompt: "已添加常用提示词：按风险优先给出处理建议",
-      business: "已添加业务入口：重点客户服务推荐",
-      "manage-prompts": "已打开快捷气泡管理：模型推荐与手工固定可并行"
+      mcp: "已添加 MCP：客户数据连接器"
     };
     const promptMap = {
       skill: "使用合规审查助手，帮我检查当前任务中的风险表述。",
-      mcp: "连接客户数据源，补充客户画像和历史服务记录。",
-      prompt: "请按风险优先级，给出我下一步需要确认的事项。",
-      business: "新增一个常用业务入口：重点客户服务推荐，并根据我的岗位和历史任务自动优化入口排序。",
-      "manage-prompts": "管理我的快捷气泡入口：保留模型推荐项，并固定我常用的提示词、Skill 和业务入口。"
+      mcp: "连接客户数据源，补充客户画像和历史服务记录。"
     };
     composerInput.value = promptMap[type];
     composerInput.focus();
@@ -2312,19 +2712,150 @@ quickAddMenu.querySelectorAll("button").forEach((button) => {
   });
 });
 
+// --- Long-press drag to reorder all prompt buttons ---
+(function () {
+  let pressTimer = null;
+  let dragging = null;
+  let dragGhost = null;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let hasMoved = false;
+
+  function startPress(e) {
+    const btn = e.target.closest(".role-prompt");
+    if (!btn) return;
+    // Only handle primary mouse button or touch
+    if (e.button !== undefined && e.button !== 0) return;
+
+    const point = e.touches ? e.touches[0] : e;
+    dragStartX = point.clientX;
+    dragStartY = point.clientY;
+    hasMoved = false;
+    dragging = btn;
+
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => {
+      if (!dragging) return;
+      enterDragMode(point);
+    }, 300);
+  }
+
+  function enterDragMode(point) {
+    document.body.classList.add("prompt-reordering");
+    dragging.classList.add("prompt-dragging");
+
+    // Create a ghost element that follows the cursor
+    const rect = dragging.getBoundingClientRect();
+    dragGhost = dragging.cloneNode(true);
+    dragGhost.classList.add("prompt-drag-ghost");
+    dragGhost.style.width = rect.width + "px";
+    dragGhost.style.height = rect.height + "px";
+    document.body.appendChild(dragGhost);
+    updateGhost(point);
+  }
+
+  function updateGhost(point) {
+    if (!dragGhost) return;
+    dragGhost.style.left = point.clientX + "px";
+    dragGhost.style.top = point.clientY + "px";
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    const point = e.touches ? e.touches[0] : e;
+
+    if (!dragGhost) {
+      // Not yet in drag mode — cancel if moved too much before timer
+      const dx = Math.abs(point.clientX - dragStartX);
+      const dy = Math.abs(point.clientY - dragStartY);
+      if (dx > 5 || dy > 5) {
+        clearTimeout(pressTimer);
+        dragging = null;
+      }
+      return;
+    }
+
+    e.preventDefault();
+    hasMoved = true;
+    updateGhost(point);
+
+    // Determine which button the cursor is over
+    const buttons = Array.from(quickPrompts.querySelectorAll(".role-prompt"));
+    const target = buttons.find((b) => {
+      if (b === dragging) return false;
+      const r = b.getBoundingClientRect();
+      return point.clientX >= r.left && point.clientX <= r.right && point.clientY >= r.top - 10 && point.clientY <= r.bottom + 10;
+    });
+
+    if (target) {
+      const r1 = dragging.getBoundingClientRect();
+      const r2 = target.getBoundingClientRect();
+      if (point.clientX < (r2.left + r2.right) / 2) {
+        quickPrompts.insertBefore(dragging, target);
+      } else {
+        quickPrompts.insertBefore(dragging, target.nextSibling);
+      }
+    }
+  }
+
+  function endPress() {
+    clearTimeout(pressTimer);
+    if (!dragging) return;
+
+    if (dragGhost) {
+      dragGhost.remove();
+      dragGhost = null;
+      document.body.classList.remove("prompt-reordering");
+      dragging.classList.remove("prompt-dragging");
+
+      if (hasMoved) {
+        const allButtons = Array.from(quickPrompts.querySelectorAll(".role-prompt"));
+        promptOrders[currentRole] = allButtons.map((btn) => btn.dataset.promptKey);
+      }
+    }
+    dragging = null;
+    hasMoved = false;
+  }
+
+  quickPrompts.addEventListener("mousedown", startPress);
+  quickPrompts.addEventListener("touchstart", startPress, { passive: true });
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("touchmove", onMove, { passive: false });
+  document.addEventListener("mouseup", endPress);
+  document.addEventListener("touchend", endPress);
+})();
+
 document.addEventListener("click", (event) => {
   if (!quickAddWrap.contains(event.target)) {
     quickAddWrap.classList.remove("open");
     quickAddMenu.setAttribute("aria-hidden", "true");
   }
-  if (!businessMenu.contains(event.target) && !event.target.closest("[data-business-menu]")) {
-    closeBusinessMenu();
+  if (!shortcutMenu.contains(event.target) && !event.target.closest("[data-shortcuts]")) {
+    closeShortcutMenu();
+  }
+  if (quickPrompts.classList.contains("manage-mode") && !quickPrompts.contains(event.target)) {
+    quickPrompts.classList.remove("manage-mode");
+  }
+  if (
+    closeTaskModal.classList.contains("open") &&
+    !closeTaskModal.contains(event.target) &&
+    !event.target.closest("[data-close-task]")
+  ) {
+    closeCloseTaskDialog();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && quickPrompts.classList.contains("manage-mode")) {
+    quickPrompts.classList.remove("manage-mode");
   }
 });
 
 document.querySelectorAll("[data-role]").forEach((button) => {
   button.addEventListener("click", () => switchRole(button.dataset.role));
 });
+
+refreshAutopilotTasksButton?.addEventListener("click", refreshAutopilotTasks);
 
 document.getElementById("collapseTask").addEventListener("click", closeTask);
 document.getElementById("closeSource").addEventListener("click", closeSourceFile);
@@ -2370,6 +2901,7 @@ document.querySelectorAll("[data-history-filter]").forEach((button) => {
 document.getElementById("markDone").addEventListener("click", () => closeTaskCard("done"));
 document.getElementById("markUnfinished").addEventListener("click", () => closeTaskCard("unfinished"));
 document.getElementById("cancelCloseTask").addEventListener("click", closeCloseTaskDialog);
+closeTaskModal.addEventListener("click", (event) => event.stopPropagation());
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -2378,12 +2910,179 @@ window.addEventListener("keydown", (event) => {
     closeSourceFile();
     closeCloseTaskDialog();
     closeToolConfig();
-    closeBusinessMenu();
+    closeShortcutMenu();
+    closeUserDropdown();
   }
 });
 
-renderBusinessMenu();
+/* ── User menu dropdown ── */
+const userMenu = document.getElementById("userMenu");
+const userTrigger = document.getElementById("userTrigger");
+const userDropdown = document.getElementById("userDropdown");
+
+function closeUserDropdown() {
+  userMenu?.classList.remove("open");
+  userDropdown?.classList.remove("open");
+  userDropdown?.setAttribute("aria-hidden", "true");
+}
+
+userTrigger?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = userDropdown.classList.contains("open");
+  if (isOpen) {
+    closeUserDropdown();
+  } else {
+    userMenu.classList.add("open");
+    userDropdown.classList.add("open");
+    userDropdown.setAttribute("aria-hidden", "false");
+  }
+});
+
+document.addEventListener("click", (e) => {
+  if (!userMenu?.contains(e.target)) {
+    closeUserDropdown();
+  }
+});
+
+renderShortcutMenu();
 renderQuickPrompts();
 renderTasks();
 renderHistory();
-window.setTimeout(addIncomingInvitation, 1200);
+
+/* ── Resize handle: drag to adjust panel width ── */
+(function initResizeHandle() {
+  const handle = document.getElementById("resizeHandle");
+  const focusViewEl = document.getElementById("focusView");
+  if (!handle || !focusViewEl) return;
+
+  let startX = 0;
+  let startRightWidth = 0;
+  const MIN_RIGHT = 240;
+  const MAX_RIGHT_RATIO = 0.6;
+
+  function getRightWidth() {
+    const cols = getComputedStyle(focusViewEl).gridTemplateColumns.split(" ");
+    return parseFloat(cols[cols.length - 1]) || 360;
+  }
+
+  handle.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    startX = e.clientX;
+    startRightWidth = getRightWidth();
+    handle.classList.add("active");
+    document.body.classList.add("resizing");
+
+    function onMove(ev) {
+      const delta = startX - ev.clientX;
+      const maxRight = window.innerWidth * MAX_RIGHT_RATIO;
+      const newRight = Math.min(maxRight, Math.max(MIN_RIGHT, startRightWidth + delta));
+      focusViewEl.style.gridTemplateColumns = `minmax(320px, 1fr) 6px ${Math.round(newRight)}px`;
+    }
+
+    function onUp() {
+      handle.classList.remove("active");
+      document.body.classList.remove("resizing");
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  });
+})();
+
+/* ── Artifact detail view ── */
+(function initArtifactDetail() {
+  const panel = document.getElementById("artifactPanel");
+  const listView = document.getElementById("artifactListView");
+  const detailView = document.getElementById("artifactDetailView");
+  const detailTitle = document.getElementById("artifactDetailTitle");
+  const detailContent = document.getElementById("artifactDetailContent");
+  const backButton = document.getElementById("artifactBackButton");
+  if (!panel || !listView || !detailView || !backButton) return;
+
+  function getArtifactDetailData(task, section, index) {
+    const items = task[section === "artifactList" ? "artifacts" : section === "modelList" ? "models" : "references"];
+    if (!items || !items[index]) return null;
+    const [name, meta] = items[index];
+
+    const detailTemplates = {
+      artifactList: () => ({
+        name,
+        meta,
+        sections: [
+          { title: "产物概述", body: `「${name}」已根据任务要求自动生成，当前状态为 ${meta}。` },
+          { title: "主要内容", body: `包含与「${task.title}」相关的核心分析结果、数据摘要和处理建议。` },
+          { title: "待处理事项", body: `请确认内容准确性，并根据实际情况进行调整或提交。` }
+        ]
+      }),
+      modelList: () => ({
+        name,
+        meta,
+        sections: [
+          { title: "模型信息", body: `${name}已在本次任务中完成调度，当前状态：${meta}。` },
+          { title: "运行摘要", body: `该模型已对任务输入进行推理，并产出相应的判断结果和证据链。` },
+          { title: "关联产物", body: `模型输出已同步至对应的任务产物和证据链中。` }
+        ]
+      }),
+      referenceList: () => ({
+        name,
+        meta,
+        sections: [
+          { title: "来源信息", body: `${name}：${meta}。` },
+          { title: "引用摘要", body: `已在任务处理过程中被检索和关联，确保决策依据可追溯。` },
+          { title: "合规记录", body: `所有引用均已留痕，可在审计和复查中调取。` }
+        ]
+      })
+    };
+
+    return detailTemplates[section] ? detailTemplates[section]() : null;
+  }
+
+  function showArtifactDetail(section, index) {
+    const task = tasks.find((t) => t.id === activeTaskId);
+    if (!task) return;
+    const data = getArtifactDetailData(task, section, index);
+    if (!data) return;
+
+    detailTitle.textContent = data.name;
+    detailContent.innerHTML = `
+      <div class="artifact-detail-meta">
+        <span class="tag">${data.meta}</span>
+        <span class="tag">${task.business}</span>
+      </div>
+      ${data.sections.map((s) => `
+        <div class="artifact-detail-section">
+          <h4>${s.title}</h4>
+          <p>${s.body}</p>
+        </div>
+      `).join("")}
+    `;
+
+    listView.style.display = "none";
+    detailView.style.display = "flex";
+  }
+
+  function backToList() {
+    detailView.style.display = "none";
+    listView.style.display = "";
+  }
+
+  panel.addEventListener("click", (e) => {
+    const asset = e.target.closest(".asset");
+    if (!asset) return;
+    const section = asset.dataset.artifactSection;
+    const index = parseInt(asset.dataset.artifactIndex, 10);
+    if (section != null && !isNaN(index)) {
+      showArtifactDetail(section, index);
+    }
+  });
+
+  backButton.addEventListener("click", backToList);
+
+  const origCloseTask = closeTask;
+  closeTask = function () {
+    backToList();
+    origCloseTask();
+  };
+})();
