@@ -960,9 +960,6 @@ function refreshAutopilotTasks() {
   lane.scrollLeft = 0;
   updateLaneArrows();
   showToast(currentRole === "leader" ? "已刷新领导视角自动驾驶分派任务" : "已刷新一线业务人员自动驾驶分派任务");
-  if (currentRole === "employee" && !incomingInvitationCreated) {
-    window.setTimeout(addIncomingInvitation, 1200);
-  }
 }
 
 function switchRole(role) {
@@ -2858,6 +2855,21 @@ document.querySelectorAll("[data-role]").forEach((button) => {
   button.addEventListener("click", () => switchRole(button.dataset.role));
 });
 
+document.querySelectorAll("[data-action='incoming-invitation']").forEach((button) => {
+  button.addEventListener("click", () => {
+    closeUserDropdown();
+    if (currentRole !== "employee") {
+      showToast("请先切换到一线业务人员视角");
+      return;
+    }
+    if (incomingInvitationCreated) {
+      showToast("已有一条协同邀请卡片");
+      return;
+    }
+    addIncomingInvitation();
+  });
+});
+
 refreshAutopilotTasksButton?.addEventListener("click", refreshAutopilotTasks);
 
 document.getElementById("collapseTask").addEventListener("click", closeTask);
@@ -2951,7 +2963,6 @@ renderShortcutMenu();
 renderQuickPrompts();
 renderTasks();
 renderHistory();
-window.setTimeout(addIncomingInvitation, 1200);
 
 /* ── Resize handle: drag to adjust panel width ── */
 (function initResizeHandle() {

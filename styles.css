@@ -251,6 +251,21 @@ button {
   background: var(--blue);
 }
 
+.dropdown-action {
+  margin-top: 6px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 10px 10px;
+  padding-top: 12px;
+}
+
+.dropdown-action .dropdown-dot {
+  border: 2px solid var(--line-strong);
+  background: transparent;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+}
+
 .autopilot-refresh {
   display: inline-flex;
   align-items: center;
