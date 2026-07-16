@@ -960,6 +960,9 @@ function refreshAutopilotTasks() {
   lane.scrollLeft = 0;
   updateLaneArrows();
   showToast(currentRole === "leader" ? "已刷新领导视角自动驾驶分派任务" : "已刷新一线业务人员自动驾驶分派任务");
+  if (currentRole === "employee" && !incomingInvitationCreated) {
+    window.setTimeout(addIncomingInvitation, 1200);
+  }
 }
 
 function switchRole(role) {
@@ -2948,6 +2951,7 @@ renderShortcutMenu();
 renderQuickPrompts();
 renderTasks();
 renderHistory();
+window.setTimeout(addIncomingInvitation, 1200);
 
 /* ── Resize handle: drag to adjust panel width ── */
 (function initResizeHandle() {
