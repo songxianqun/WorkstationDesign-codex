@@ -1110,6 +1110,31 @@ button {
   -webkit-line-clamp: unset;
 }
 
+/* ── AI text visual hierarchy ── */
+.ai-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  display: block;
+  margin-top: 6px;
+}
+
+.ai-total-line {
+  font-weight: 800;
+}
+
+.ai-label {
+  font-weight: 700;
+}
+
+.ai-num {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.mini-message .ai-section-title {
+  font-size: 13px;
+}
+
 .mini-message.streaming span::after,
 .message.streaming span::after {
   display: inline-block;

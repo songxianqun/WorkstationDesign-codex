@@ -1131,7 +1131,14 @@ function renderMiniThread(task, limit = null) {
     .map(([type, text, meta]) => {
       const { className, label } = getMessageMeta(type);
       const streaming = meta?.streaming ? " streaming" : "";
-      const displayText = meta?.html ? (meta.plainText || "") : text;
+      let displayText;
+      if (meta?.html) {
+        displayText = formatAiText(meta.plainText || "");
+      } else if (className === "ai") {
+        displayText = formatAiText(text);
+      } else {
+        displayText = text;
+      }
       return `<div class="mini-message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}<span>${displayText}</span></div>`;
     })
     .join("");
@@ -1145,6 +1152,24 @@ function getMessageMeta(type) {
     return { className: "person", label: type.slice("person:".length) };
   }
   return { className: "ai", label: "" };
+}
+
+function formatAiText(text) {
+  if (!text) return "";
+  return text.split("\n").map((line) => {
+    let html = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (/^[一二三四五六七八九十]+、/.test(html)) {
+      return `<strong class="ai-section-title">${html}</strong>`;
+    }
+    if (/^合计/.test(html)) {
+      return `<strong class="ai-total-line">${html}</strong>`;
+    }
+    if (/^\s*[\u4e00-\u9fa5A-Za-z].+：/.test(html)) {
+      html = html.replace(/^(\s*)([^：]+：)/, "$1<strong class=\"ai-label\">$2</strong>");
+    }
+    html = html.replace(/(\d[\d,]*\.?\d*\s*(?:万元|亿元|户|%))/g, '<em class="ai-num">$1</em>');
+    return html;
+  }).join("\n");
 }
 
 function renderNextSteps(task) {
@@ -1287,6 +1312,8 @@ function applyToolConfig() {
 function clearUnreadDone(id, shouldRender = true) {
   const card = document.getElementById(`card-${id}`);
   card?.classList.remove("highlight");
+  card?.classList.remove("unread-done");
+  card?.querySelector(".unread-tag")?.remove();
   let task = tasks.find((item) => item.id === id);
   if (!task) task = employeeTasks.find((item) => item.id === id);
   if (!task) task = leaderTasks.find((item) => item.id === id);
@@ -1492,7 +1519,8 @@ function renderConversation(task) {
       if (meta?.html) {
         return `<div class="message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}${text}</div>`;
       }
-      return `<div class="message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}<span>${text}</span></div>`;
+      const displayText = className === "ai" ? formatAiText(text) : text;
+      return `<div class="message ${className}${streaming}">${label ? `<strong>${label}</strong>` : ""}<span>${displayText}</span></div>`;
     })
     .join("");
   conversation.scrollTop = conversation.scrollHeight;
